@@ -1,0 +1,96 @@
+import { db } from '../lib/firebase';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, runTransaction } from 'firebase/firestore';
+
+export async function submitWithdrawal(uid: string, userName: string, method: string, amount: number, points: number) {
+  try {
+    let success = false;
+    let errorMsg = "";
+    
+    await runTransaction(db, async (transaction) => {
+      const userRef = doc(db, 'users', uid);
+      const userDoc = await transaction.get(userRef);
+      if (!userDoc.exists()) throw new Error("User not found");
+      
+      const currentPoints = userDoc.data()?.points || 0;
+      if (currentPoints < points) throw new Error("رصيد غير كافٍ");
+      
+      transaction.update(userRef, { points: currentPoints - points });
+      
+      const withdrawRef = doc(collection(db, 'withdrawals'));
+      transaction.set(withdrawRef, {
+        userId: uid,
+        userName,
+        method,
+        amount,
+        points,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+      
+      const historyRef = doc(collection(db, 'users', uid, 'history'));
+      transaction.set(historyRef, {
+        title: 'طلب سحب أرباح',
+        amount: -points,
+        type: 'spend',
+        createdAt: serverTimestamp()
+      });
+    });
+    
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getLeaderboard(currentUid: string | null) {
+  const usersRef = collection(db, 'users');
+  const q = query(usersRef, orderBy('points', 'desc'), limit(10));
+  const snap = await getDocs(q);
+  
+  const leaders = snap.docs.map(doc => ({
+    id: doc.id,
+    name: doc.data().name,
+    points: doc.data().points,
+    isVip: doc.data().role === 'admin',
+    isCurrentUser: doc.id === currentUid
+  }));
+  return leaders;
+}
+
+export async function getAdminData() {
+   // Since the real site might have thousands of users, we'd normally paginate or use aggregation queries.
+   // For now we just query simple lists.
+   const usersSnap = await getDocs(query(collection(db, 'users'), limit(50)));
+   const withdrawalsSnap = await getDocs(query(collection(db, 'withdrawals'), limit(50)));
+   
+   return {
+     totalUsers: usersSnap.size,
+     totalPointsGiven: usersSnap.docs.reduce((acc, doc) => acc + (doc.data().points || 0), 0),
+     pendingWithdrawals: withdrawalsSnap.docs.filter(d => d.data().status === 'pending').length,
+     withdrawals: withdrawalsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+     users: usersSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+   };
+}
+
+export async function handleAdminWithdrawal(id: string, action: 'approved'|'rejected', wData: any) {
+   if (action === 'rejected') {
+      // Refund points
+      await runTransaction(db, async (t) => {
+         const userRef = doc(db, 'users', wData.userId);
+         const wRef = doc(db, 'withdrawals', id);
+         const userSnap = await t.get(userRef);
+         if (userSnap.exists()) {
+             t.update(userRef, { points: (userSnap.data()?.points || 0) + wData.points });
+         }
+         t.update(wRef, { status: 'rejected' });
+      });
+   } else {
+      await updateDoc(doc(db, 'withdrawals', id), { status: 'approved' });
+   }
+}
+
+export async function getUserHistory(uid: string) {
+   const q = query(collection(db, 'users', uid, 'history'), orderBy('createdAt', 'desc'), limit(20));
+   const snap = await getDocs(q);
+   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}

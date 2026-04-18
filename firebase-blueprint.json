@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the WinTube platform.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "points": { "type": "number", "description": "User's balance" },
+        "banned": { "type": "boolean" },
+        "lastVideoClaim": { "type": "number" },
+        "lastGameClaim": { "type": "number" },
+        "referralCode": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "email", "role", "points", "banned"]
+    },
+    "HistoryRecord": {
+      "title": "History Record",
+      "description": "Log of point earnings/spendings.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["earn", "spend", "system"] },
+        "date": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "amount", "type", "createdAt"]
+    },
+    "UserSecret": {
+      "title": "User Secret",
+      "description": "Private user information.",
+      "type": "object",
+      "properties": {
+        "phone": { "type": "string" }
+      }
+    },
+    "Withdrawal": {
+      "title": "Withdrawal",
+      "description": "User withdrawal request.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "method": { "type": "string" },
+        "amount": { "type": "number" },
+        "points": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "userName", "method", "amount", "points", "status", "createdAt"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Global app settings.",
+      "type": "object",
+      "properties": {
+        "videoReward": { "type": "number" },
+        "gameReward": { "type": "number" },
+        "minWithdrawal": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["videoReward", "gameReward", "minWithdrawal"]
+    },
+    "Game": {
+      "title": "Game",
+      "description": "Arcade games config.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "url": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "url", "thumbnail", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Public user profiles and main balance."
+    },
+    "/users/{userId}/private/info": {
+      "schema": { "$ref": "#/entities/UserSecret" },
+      "description": "Private profile data."
+    },
+    "/users/{userId}/history/{historyId}": {
+      "schema": { "$ref": "#/entities/HistoryRecord" },
+      "description": "User point logs."
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": { "$ref": "#/entities/Withdrawal" },
+      "description": "Withdrawal requests."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Settings" },
+      "description": "App settings (global)."
+    },
+    "/games/{gameId}": {
+      "schema": { "$ref": "#/entities/Game" },
+      "description": "List of games added by admin."
+    }
+  }
+}

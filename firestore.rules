@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidUserCreate(data) {
+      return data.keys().hasAll(['name', 'email', 'role', 'points', 'banned', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 60 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 200 &&
+             data.role is string && data.role in ['user', 'admin'] &&
+             data.points is number && data.points >= 0 &&
+             data.banned is bool &&
+             data.createdAt == request.time;
+    }
+    
+    function isValidUserUpdate(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 60 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 200 &&
+             data.role is string && data.role in ['user', 'admin'] &&
+             data.points is number && data.points >= 0 &&
+             data.banned is bool;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUserCreate(incoming()) && incoming().role == 'user' && incoming().points == 0 && incoming().banned == false;
+      allow update: if isSignedIn() && isValidId(userId) && isValidUserUpdate(incoming()) && (
+        isAdmin() ||
+        (
+           request.auth.uid == userId &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'lastVideoClaim', 'lastGameClaim', 'referralCount', 'referralsEarnings']) &&
+           incoming().role == existing().role &&
+           incoming().banned == existing().banned
+        ) ||
+        (
+           // مسار السماح بتوزيع الأرباح على الدعوة (خارجي)
+           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'referralCount', 'referralsEarnings']) &&
+           incoming().points == existing().points + 500 &&
+           incoming().referralCount == existing().get('referralCount', 0) + 1 &&
+           incoming().referralsEarnings == existing().get('referralsEarnings', 0) + 500
+        )
+      );
+
+      match /history/{historyId} {
+        allow get: if isSignedIn() && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+        allow create: if isSignedIn() && 
+           (request.auth.uid == userId || (incoming().type == 'earn' && incoming().title == 'مكافأة دعوة صديق' && incoming().amount == 500)) && 
+           incoming().keys().hasAll(['title', 'amount', 'type', 'createdAt']) &&
+           incoming().title is string && incoming().title.size() <= 100 &&
+           incoming().amount is number &&
+           incoming().type in ['earn', 'spend', 'system'] &&
+           incoming().createdAt == request.time;
+      }
+    }
+
+    match /settings/{settingId} {
+      allow read: if isSignedIn();
+      allow update: if isAdmin() &&
+         incoming().videoReward is number && incoming().videoReward > 0 &&
+         incoming().gameReward is number && incoming().gameReward > 0 &&
+         incoming().minWithdrawal is number && incoming().minWithdrawal > 0;
+    }
+
+    match /games/{gameId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /withdrawals/{withdrawalId} {
+      allow read: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+      allow list: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+      allow create: if isSignedIn() &&
+         incoming().keys().hasAll(['userId', 'userName', 'method', 'amount', 'points', 'status', 'createdAt']) &&
+         incoming().userId == request.auth.uid &&
+         incoming().status == 'pending' &&
+         incoming().createdAt == request.time &&
+         incoming().amount is number && incoming().points is number;
+      allow update: if isAdmin() && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['status']) &&
+         incoming().status in ['approved', 'rejected'];
+    }
+  }
+}
