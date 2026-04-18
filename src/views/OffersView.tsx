@@ -9,19 +9,19 @@ export const OffersView = ({ user }: any) => {
   // لاحظ كيف نرسل `[USER_ID]` لكي تعرف الشركة من هو المستخدم الذي أكمل العرض.
   const providers = [
     { 
+      id: 'mylead', 
+      title: 'عروض MyLead (الرئيسية)', 
+      desc: 'أفضل العروض والمهام ذات العائد المرتفع', 
+      urlTemplate: 'https://reward-me.eu/03922d64-3b32-11f1-832c-8a5fb7be40ea?player_id=[USER_ID]',
+      bgColor: 'bg-purple-600',
+      icon: Briefcase
+    },
+    { 
       id: 'cpalead', 
       title: 'عروض CPALead', 
       desc: 'استبيانات وتحميل تطبيقات (سريع)', 
       urlTemplate: 'https://cdn.cpalead.com/adwall/preview.php?pub=XXXXXX&subid=[USER_ID]', // استبدل XXXXXX برقمك
       bgColor: 'bg-blue-600',
-      icon: Briefcase
-    },
-    { 
-      id: 'timewall', 
-      title: 'TimeWall', 
-      desc: 'المهام المصغرة والنقرات', 
-      urlTemplate: 'https://timewall.com/offers?pub=YYYYYY&userid=[USER_ID]', // استبدل YYYYYY برقمك
-      bgColor: 'bg-emerald-600',
       icon: ExternalLink
     }
   ];
