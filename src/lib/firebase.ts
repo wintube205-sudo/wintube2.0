@@ -118,4 +118,96 @@ export async function updatePoints(uid: string, pointsDelta: number, reason: str
   }
 }
 
+// ... daily stats functions ...
+
+export async function getDailyTasks(uid: string) {
+  const today = new Date().toISOString().split('T')[0];
+  const statRef = doc(db, 'users', uid, 'daily_stats', today);
+  const statSnap = await getDoc(statRef);
+  
+  if (!statSnap.exists()) {
+    const initialData = {
+      videosWatched: 0,
+      gamesPlayed: 0,
+      loginClaimed: false,
+      videosClaimed: false,
+      gamesClaimed: false,
+      updatedAt: serverTimestamp()
+    };
+    await setDoc(statRef, initialData);
+    return initialData;
+  }
+  return statSnap.data();
+}
+
+export async function incrementDailyProgress(uid: string, type: 'video' | 'game') {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const statRef = doc(db, 'users', uid, 'daily_stats', today);
+    
+    await runTransaction(db, async (t) => {
+      const statSnap = await t.get(statRef);
+      if (!statSnap.exists()) {
+        t.set(statRef, {
+          videosWatched: type === 'video' ? 1 : 0,
+          gamesPlayed: type === 'game' ? 1 : 0,
+          loginClaimed: false,
+          videosClaimed: false,
+          gamesClaimed: false,
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        const data = statSnap.data();
+        const updates: any = {};
+        if (type === 'video') updates.videosWatched = (data.videosWatched || 0) + 1;
+        if (type === 'game') updates.gamesPlayed = (data.gamesPlayed || 0) + 1;
+        t.update(statRef, updates);
+      }
+    });
+  } catch (err) {
+    console.error("Increment daily error", err);
+  }
+}
+
+export async function claimDailyReward(uid: string, taskId: 'login' | 'videos' | 'games', reward: number, title: string) {
+  const today = new Date().toISOString().split('T')[0];
+  const statRef = doc(db, 'users', uid, 'daily_stats', today);
+  const userRef = doc(db, 'users', uid);
+
+  try {
+    let newTotal = 0;
+    await runTransaction(db, async (t) => {
+      const statSnap = await t.get(statRef);
+      let statData: any = statSnap.exists() ? statSnap.data() : { videosWatched: 0, gamesPlayed: 0, loginClaimed: false, videosClaimed: false, gamesClaimed: false };
+      
+      if (taskId === 'login' && statData.loginClaimed) throw new Error("تم استلام المكافأة مسبقاً");
+      if (taskId === 'videos' && (statData.videosWatched < 5 || statData.videosClaimed)) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
+      if (taskId === 'games' && (statData.gamesPlayed < 3 || statData.gamesClaimed)) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
+
+      const userSnap = await t.get(userRef);
+      if (!userSnap.exists()) throw new Error("User not found");
+      newTotal = (userSnap.data()?.points || 0) + reward;
+
+      const updates: any = {};
+      if (taskId === 'login') updates.loginClaimed = true;
+      if (taskId === 'videos') updates.videosClaimed = true;
+      if (taskId === 'games') updates.gamesClaimed = true;
+      t.update(statRef, updates);
+      
+      t.update(userRef, { points: newTotal });
+
+      const historyRef = doc(collection(db, 'users', uid, 'history'));
+      t.set(historyRef, {
+        title: title,
+        amount: reward,
+        type: 'earn',
+        createdAt: serverTimestamp()
+      });
+    });
+    return { success: true, newPoints: newTotal, error: null };
+  } catch (e: any) {
+    return { success: false, newPoints: 0, error: e.message };
+  }
+}
+
 // ... more ops will be added directly into components for brevity ...

@@ -68,6 +68,10 @@ service cloud.firestore {
            incoming().type in ['earn', 'spend', 'system'] &&
            incoming().createdAt == request.time;
       }
+
+      match /daily_stats/{dateId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     match /settings/{settingId} {

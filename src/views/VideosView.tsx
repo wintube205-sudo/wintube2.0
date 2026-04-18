@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Play, EyeOff, Loader2, Gift, Clock, X } from 'lucide-react';
-import { updatePoints } from '../lib/firebase';
+import { updatePoints, incrementDailyProgress } from '../lib/firebase';
 
 export const VideosView = ({ user, setRefreshPoints }: any) => {
   const [videos, setVideos] = useState<any[]>([]);
@@ -23,6 +23,9 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
     try {
       const response = await updatePoints(user.id, 10, 'مشاهدة فيديو', 'earn');
       if (response.success) {
+        // Increment daily tasks counter for video
+        await incrementDailyProgress(user.id, 'video');
+
         setRefreshPoints((prev: number) => prev + 1);
         setToast('+ مكافأة آمنة!'); 
         setPointReady(false); 

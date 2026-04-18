@@ -42,12 +42,12 @@ export const RewardsView = ({ points, user, setRefreshPoints }: any) => {
           <p className="text-neutral-500 text-xs mt-2">الرصيد الحالي: {points.toLocaleString()} نقطة</p>
         </div>
         <div className="space-y-4">
-          <select value={method} onChange={(e) => setMethod(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white">
+          <select value={method} onChange={(e) => setMethod(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:outline-none focus:border-green-500">
             <option>USDT (TRC20)</option>
-            <option>PayPal</option>
+            <option>فيزا / ماستر كارد (Visa / Mastercard)</option>
             <option>Zain Cash</option>
           </select>
-          <input type="text" value={account} onChange={(e) => setAccount(e.target.value)} placeholder="رقم الحساب / المحفظة" className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white" />
+          <input type="text" value={account} onChange={(e) => setAccount(e.target.value)} placeholder="رقم الحساب / عنوان المحفظة / رقم البطاقة" className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:outline-none focus:border-green-500" />
           <button disabled={loading} onClick={handleWithdraw} className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl mt-4 disabled:opacity-50">
              {loading ? 'جاري التقديم...' : 'تقديم طلب السحب'}
           </button>

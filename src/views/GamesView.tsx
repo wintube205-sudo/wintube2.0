@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Gamepad2, X } from 'lucide-react';
-import { updatePoints } from '../lib/firebase';
+import { updatePoints, incrementDailyProgress } from '../lib/firebase';
 import { collection, getDocs, query, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -28,6 +28,7 @@ export const GamesView = ({ points, user, setRefreshPoints }: any) => {
     try {
       const response = await updatePoints(user.id, 5, 'لعب لعبة تسلية', 'earn');
       if (response.success) {
+        await incrementDailyProgress(user.id, 'game');
         setRefreshPoints((prev: number) => prev + 1);
         setToast('+ مكافأة آمنة!'); 
         setPointReady(false); 
@@ -79,6 +80,7 @@ export const GamesView = ({ points, user, setRefreshPoints }: any) => {
          setRefreshPoints((prev: number) => prev + 1);
       }
       
+      await incrementDailyProgress(user.id, 'game');
       setResult({ msg: isWin ? 'لقد فزت!' : 'حظ أوفر', color: isWin ? 'text-green-500' : 'text-neutral-500' });
 
     } catch (err) { setResult({ msg: 'خطأ', color: 'text-red-500' }); } finally { setIsRolling(false); }
