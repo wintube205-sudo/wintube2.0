@@ -68,7 +68,6 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
 
     if (playingVideo) {
       const initFluidPlayer = () => {
-         // Prevent double initialization
          if (playerInstance) return;
          
          const videoEl = document.getElementById('video-player');
@@ -76,7 +75,8 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
              playerInstance = (window as any).fluidPlayer('video-player', {
                 layoutControls: {
                    fillToContainer: true,
-                   autoPlay: true,
+                   primaryColor: "#e50914",
+                   autoPlay: false,
                    mute: false
                 },
                 vastOptions: {
@@ -84,14 +84,19 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
                    adList: [
                       {
                          roll: 'preRoll',
-                         vastTag: 'https://s.magsrv.com/v1/vast.php?idzone=5904732'
+                         vastTag: 'https://s.magsrv.com/v1/vast.php?idzone=5904732',
+                         fallbackVastTags: ['https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator='],
                       }
                    ]
                 }
              });
+             
+             // أحياناً الإعلان يمنع التشغيل التلقائي بسبب سياسات المتصفح،
+             // نترك الأمر للمستخدم ليضغط زر التشغيل وسيعمل التايمر.
          }
       };
 
+      // Ensure Fluid Player script is loaded
       if (!(window as any).fluidPlayer) {
           const script = document.createElement('script');
           script.src = 'https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js';
@@ -148,8 +153,8 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
             <button onClick={() => { setPlayingVideo(null); setPointReady(false); }} className="p-2 bg-neutral-800 text-white rounded-xl font-bold text-sm flex items-center gap-1"><X size={18} /> إغلاق</button>
           </div>
           <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex items-center justify-center relative">
-            <video id={`video-player`} className="w-full aspect-video rounded-2xl shadow-2xl bg-black relative z-0">
-               <source src='https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' type='video/mp4' />
+            <video id={`video-player`} className="w-full aspect-video rounded-2xl shadow-2xl bg-black relative z-0" controls>
+               <source src='https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' title="Video" type='video/mp4' />
             </video>
           </div>
           {toast && <div className={`absolute bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold shadow-xl z-50 ${toast.includes('خطأ') ? 'bg-red-600' : 'bg-green-600'} text-white`}>{toast}</div>}
