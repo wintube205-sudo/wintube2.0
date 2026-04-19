@@ -65,9 +65,12 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
          if ((window as any).fluidPlayer) {
              (window as any).fluidPlayer('video-player', {
                 layoutControls: {
-                   fillToContainer: true
+                   fillToContainer: true,
+                   autoPlay: true,
+                   mute: false // Allow audio, Exoclick sometimes fails if forced muted or strictly unmuted, but false is standard
                 },
                 vastOptions: {
+                   allowVPAID: true, // Crucial for many ExoClick ads
                    adList: [
                       {
                          roll: 'preRoll',
@@ -132,7 +135,7 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
             <button onClick={() => { setPlayingVideo(null); setPointReady(false); }} className="p-2 bg-neutral-800 text-white rounded-xl font-bold text-sm flex items-center gap-1"><X size={18} /> إغلاق</button>
           </div>
           <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex items-center justify-center relative">
-            <video id={`video-player`} className="w-full aspect-video rounded-2xl shadow-2xl bg-black relative z-0" crossOrigin="anonymous">
+            <video id={`video-player`} className="w-full aspect-video rounded-2xl shadow-2xl bg-black relative z-0">
                <source src='https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' type='video/mp4' />
             </video>
           </div>
