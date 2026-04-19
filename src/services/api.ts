@@ -62,13 +62,15 @@ export async function getAdminData() {
    // For now we just query simple lists.
    const usersSnap = await getDocs(query(collection(db, 'users'), limit(50)));
    const withdrawalsSnap = await getDocs(query(collection(db, 'withdrawals'), limit(50)));
+   const gamesSnap = await getDocs(collection(db, 'games'));
    
    return {
      totalUsers: usersSnap.size,
      totalPointsGiven: usersSnap.docs.reduce((acc, doc) => acc + (doc.data().points || 0), 0),
      pendingWithdrawals: withdrawalsSnap.docs.filter(d => d.data().status === 'pending').length,
      withdrawals: withdrawalsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
-     users: usersSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+     users: usersSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+     games: gamesSnap.docs.map(d => ({ id: d.id, ...d.data() }))
    };
 }
 

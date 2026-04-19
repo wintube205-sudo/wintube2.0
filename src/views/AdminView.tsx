@@ -41,12 +41,20 @@ export const AdminView = ({ user }: any) => {
     await addDoc(collection(db, 'games'), { ...newGameForm, createdAt: new Date().toISOString() });
     showToast('تم الإضافة'); 
     setNewGameForm({ title: '', url: '', thumbnail: '' }); 
+    loadData();
+  };
+
+  const onDeleteGame = async (id: string) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذه اللعبة؟')) return;
+    await deleteDoc(doc(db, 'games', id));
+    showToast('تم الحذف بنجاح');
+    loadData();
   };
 
   if (user?.role !== 'admin') return <div className="text-center py-20 text-red-500 font-bold">مرفوض: دخول للإدارة فقط.</div>;
   if (loading || !adminData) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-red-500" size={40} /></div>;
 
-  const { totalUsers, totalPointsGiven, pendingWithdrawals, withdrawals, users } = adminData;
+  const { totalUsers, totalPointsGiven, pendingWithdrawals, withdrawals, users, games } = adminData;
 
   return (
     <div className="max-w-6xl mx-auto animate-in fade-in w-full" dir="rtl">
@@ -110,6 +118,33 @@ export const AdminView = ({ user }: any) => {
 
       {activeAdminTab === 'games' && (
         <div className="animate-in fade-in space-y-8">
+           <div>
+             <h3 className="text-xl font-bold text-white mb-4">الألعاب الحالية</h3>
+             <div className="bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden overflow-x-auto">
+               <table className="w-full text-right text-sm">
+                 <thead className="bg-neutral-950 text-neutral-400 border-b border-neutral-800">
+                    <tr><th className="p-4">اللعبة</th><th className="p-4 text-center">الإجراء</th></tr>
+                 </thead>
+                 <tbody className="text-white">
+                    {games?.map((g: any) => (
+                       <tr key={g.id} className="border-b border-neutral-800">
+                          <td className="p-4 flex items-center gap-3">
+                            <img src={g.thumbnail} alt={g.title} className="w-10 h-10 rounded-lg object-cover bg-neutral-800" />
+                            {g.title}
+                          </td>
+                          <td className="p-4 text-center">
+                             <button onClick={() => onDeleteGame(g.id)} className="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white transition-colors px-3 py-1 rounded">حذف</button>
+                          </td>
+                       </tr>
+                    ))}
+                    {(!games || games.length === 0) && (
+                       <tr><td colSpan={2} className="p-4 text-center text-neutral-500">لا توجد ألعاب مضافة حالياً.</td></tr>
+                    )}
+                 </tbody>
+               </table>
+             </div>
+           </div>
+
            <div>
              <h3 className="text-xl font-bold text-white mb-4">إضافة لعبة جديدة</h3>
              <form onSubmit={onAddGame} className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
