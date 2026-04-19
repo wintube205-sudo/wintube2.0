@@ -90,13 +90,9 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
                    ]
                 }
              });
-             
-             // أحياناً الإعلان يمنع التشغيل التلقائي بسبب سياسات المتصفح،
-             // نترك الأمر للمستخدم ليضغط زر التشغيل وسيعمل التايمر.
          }
       };
 
-      // Ensure Fluid Player script is loaded
       if (!(window as any).fluidPlayer) {
           const script = document.createElement('script');
           script.src = 'https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js';
