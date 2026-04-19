@@ -43,6 +43,7 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
     }
   }, [isClaiming, pointReady, user]);
 
+  // 1. Timer Effect
   useEffect(() => {
     let timer: any;
     if (playingVideo && !isClaiming && !pointReady) {
@@ -58,19 +59,28 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
         }
       }, 1000);
     }
-    
-    // Initialize Fluid Player for ExoClick VAST
+    return () => clearInterval(timer);
+  }, [playingVideo, isClaiming, pointReady, user]);
+
+  // 2. Fluid Player Initialization Effect
+  useEffect(() => {
+    let playerInstance: any = null;
+
     if (playingVideo) {
       const initFluidPlayer = () => {
-         if ((window as any).fluidPlayer) {
-             (window as any).fluidPlayer('video-player', {
+         // Prevent double initialization
+         if (playerInstance) return;
+         
+         const videoEl = document.getElementById('video-player');
+         if ((window as any).fluidPlayer && videoEl) {
+             playerInstance = (window as any).fluidPlayer('video-player', {
                 layoutControls: {
                    fillToContainer: true,
                    autoPlay: true,
-                   mute: false // Allow audio, Exoclick sometimes fails if forced muted or strictly unmuted, but false is standard
+                   mute: false
                 },
                 vastOptions: {
-                   allowVPAID: true, // Crucial for many ExoClick ads
+                   allowVPAID: true,
                    adList: [
                       {
                          roll: 'preRoll',
@@ -88,13 +98,16 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
           document.body.appendChild(script);
           script.onload = initFluidPlayer;
       } else {
-          // Add a small delay if element isn't attached yet
           setTimeout(initFluidPlayer, 100);
       }
     }
 
-    return () => clearInterval(timer);
-  }, [playingVideo, isClaiming, pointReady, user]);
+    return () => {
+       if (playerInstance && typeof playerInstance.destroy === 'function') {
+           playerInstance.destroy();
+       }
+    };
+  }, [playingVideo]);
 
   return (
     <div className="max-w-6xl mx-auto animate-in fade-in w-full" dir="rtl">
