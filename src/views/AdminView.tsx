@@ -149,9 +149,14 @@ export const AdminView = ({ user }: any) => {
              <h3 className="text-xl font-bold text-white mb-4">إضافة لعبة HTML5 جديدة</h3>
              <form onSubmit={onAddGame} className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input type="text" value={newGameForm.title} onChange={e => setNewGameForm({...newGameForm, title: e.target.value})} placeholder="اسم اللعبة" className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white" />
-                <input type="url" value={newGameForm.url} onChange={e => setNewGameForm({...newGameForm, url: e.target.value})} placeholder="رابط اللعبة HTML5" className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white ltr" dir="ltr" />
+                <input type="text" value={newGameForm.url} onChange={e => {
+                   let val = e.target.value;
+                   const srcMatch = val.match(/src=["'](.*?)["']/);
+                   if (srcMatch && srcMatch[1]) { val = srcMatch[1]; }
+                   setNewGameForm({...newGameForm, url: val});
+                }} placeholder="رابط اللعبة أو كود التضمين (iframe)" className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white ltr" dir="ltr" />
                 <input type="url" value={newGameForm.thumbnail} onChange={e => setNewGameForm({...newGameForm, thumbnail: e.target.value})} placeholder="رابط الصورة المصغرة (Thumbnail)" className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white ltr" dir="ltr" />
-                <div className="col-span-1 md:col-span-3 text-xs text-neutral-500 mb-2">يرجى توفير الرابط المباشر للعبة (URL) ليتم تشغيلها داخل الموقع (iframe)</div>
+                <div className="col-span-1 md:col-span-3 text-xs text-neutral-500 mb-2">يمكنك وضع "الرابط المباشر للعبة" أو لصق "كود iframe" بالكامل وسيقوم النظام باستخراج الرابط تلقائياً.</div>
                 <div className="md:col-span-3"><button type="submit" className="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl">إضافة اللعبة HTML5</button></div>
              </form>
            </div>
