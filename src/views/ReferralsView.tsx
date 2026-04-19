@@ -24,7 +24,7 @@ export const ReferralsView = ({ user }: any) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="md:col-span-2 bg-gradient-to-br from-purple-900/40 to-neutral-900 border border-purple-500/20 rounded-3xl p-6 md:p-8">
           <h3 className="text-xl font-bold text-white mb-2">شارك رابطك واربح!</h3>
-          <p className="text-neutral-400 text-sm mb-6">احصل على 20% من جميع أرباح أصدقائك، بالإضافة إلى 500 نقطة فور تسجيلهم.</p>
+          <p className="text-neutral-400 text-sm mb-6">احصل على 20% من جميع أرباح أصدقائك، بالإضافة إلى 100 نقطة فور تسجيلهم.</p>
           <div className="bg-neutral-950 border border-neutral-800 p-2 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
             <span className="text-white font-mono text-sm px-4 truncate w-full" dir="ltr">{referralLink}</span>
             <button onClick={handleCopy} className={`w-full sm:w-auto flex justify-center items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm ${copied ? 'bg-green-600 text-white' : 'bg-purple-600 hover:bg-purple-700 text-white'}`}>{copied ? <CheckCircle2 size={18} /> : <Copy size={18} />}<span>{copied ? 'تم النسخ!' : 'نسخ الرابط'}</span></button>

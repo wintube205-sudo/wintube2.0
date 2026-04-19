@@ -72,15 +72,15 @@ async function processReferralReward(referrerId: string) {
     const refEarnings = referrerDoc.data()?.referralsEarnings || 0;
 
     t.update(referrerRef, {
-        points: currentPoints + 500,
+        points: currentPoints + 100,
         referralCount: refCount + 1,
-        referralsEarnings: refEarnings + 500
+        referralsEarnings: refEarnings + 100
     });
 
     const historyRef = doc(collection(db, 'users', referrerId, 'history'));
     t.set(historyRef, {
         title: 'مكافأة دعوة صديق',
-        amount: 500,
+        amount: 100,
         type: 'earn',
         createdAt: serverTimestamp()
     });

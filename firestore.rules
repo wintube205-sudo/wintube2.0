@@ -51,9 +51,9 @@ service cloud.firestore {
         (
            // مسار السماح بتوزيع الأرباح على الدعوة (خارجي)
            incoming().diff(existing()).affectedKeys().hasOnly(['points', 'referralCount', 'referralsEarnings']) &&
-           incoming().points == existing().points + 500 &&
+           incoming().points == existing().points + 100 &&
            incoming().referralCount == existing().get('referralCount', 0) + 1 &&
-           incoming().referralsEarnings == existing().get('referralsEarnings', 0) + 500
+           incoming().referralsEarnings == existing().get('referralsEarnings', 0) + 100
         )
       );
 
@@ -61,7 +61,7 @@ service cloud.firestore {
         allow get: if isSignedIn() && request.auth.uid == userId;
         allow list: if isSignedIn() && request.auth.uid == userId;
         allow create: if isSignedIn() && 
-           (request.auth.uid == userId || (incoming().type == 'earn' && incoming().title == 'مكافأة دعوة صديق' && incoming().amount == 500)) && 
+           (request.auth.uid == userId || (incoming().type == 'earn' && incoming().title == 'مكافأة دعوة صديق' && incoming().amount == 100)) && 
            incoming().keys().hasAll(['title', 'amount', 'type', 'createdAt']) &&
            incoming().title is string && incoming().title.size() <= 100 &&
            incoming().amount is number &&
