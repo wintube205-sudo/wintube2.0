@@ -37,11 +37,19 @@ export const AdminView = ({ user }: any) => {
   
   const onAddGame = async (e: any) => { 
     e.preventDefault(); 
-    if (!newGameForm.title) return; 
-    await addDoc(collection(db, 'games'), { ...newGameForm, createdAt: new Date().toISOString() });
-    showToast('تم الإضافة'); 
-    setNewGameForm({ title: '', url: '', thumbnail: '' }); 
-    loadData();
+    if (!newGameForm.title || !newGameForm.url) {
+      showToast('يرجى تعبئة الحقول المطلوبة');
+      return; 
+    }
+    try {
+      await addDoc(collection(db, 'games'), { ...newGameForm, createdAt: new Date().toISOString() });
+      showToast('تم الإضافة بنجاح'); 
+      setNewGameForm({ title: '', url: '', thumbnail: '' }); 
+      loadData();
+    } catch(err: any) {
+      console.error(err);
+      showToast('خطأ: ' + err.message);
+    }
   };
 
   const onDeleteGame = async (id: string) => {
@@ -155,7 +163,7 @@ export const AdminView = ({ user }: any) => {
                    if (srcMatch && srcMatch[1]) { val = srcMatch[1]; }
                    setNewGameForm({...newGameForm, url: val});
                 }} placeholder="رابط اللعبة أو كود التضمين (iframe)" className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white ltr" dir="ltr" />
-                <input type="url" value={newGameForm.thumbnail} onChange={e => setNewGameForm({...newGameForm, thumbnail: e.target.value})} placeholder="رابط الصورة المصغرة (Thumbnail)" className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white ltr" dir="ltr" />
+                <input type="text" value={newGameForm.thumbnail} onChange={e => setNewGameForm({...newGameForm, thumbnail: e.target.value})} placeholder="رابط الصورة المصغرة (Thumbnail)" className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white ltr" dir="ltr" />
                 <div className="col-span-1 md:col-span-3 text-xs text-neutral-500 mb-2">يمكنك وضع "الرابط المباشر للعبة" أو لصق "كود iframe" بالكامل وسيقوم النظام باستخراج الرابط تلقائياً.</div>
                 <div className="md:col-span-3"><button type="submit" className="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl">إضافة اللعبة HTML5</button></div>
              </form>
