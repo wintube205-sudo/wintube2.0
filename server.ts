@@ -18,7 +18,7 @@ try {
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = parseInt(process.env.PORT || '3000', 10);
 
   // إعداد مسار استقبال إشعارات العروض (Postback / Webhook)
   // الرابط الجديد الخاص بك في MyLead سيكون:

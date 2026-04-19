@@ -46,7 +46,7 @@ export default function App() {
 
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
-        let uData = await getUserData(fbUser.uid);
+        let uData: any = await getUserData(fbUser.uid);
         if (!uData) {
           uData = await createUserDocument(fbUser);
         }
@@ -62,7 +62,7 @@ export default function App() {
 
   useEffect(() => {
     if (user?.id) {
-       getUserData(user.id).then(uData => {
+       getUserData(user.id).then((uData: any) => {
            if (uData) setPoints(uData.points || 0);
        });
     }
@@ -72,7 +72,7 @@ export default function App() {
     setIsAuthOpen(false);
     const fbUser = await signIn();
     if (fbUser) {
-        let uData = await getUserData(fbUser.uid);
+        let uData: any = await getUserData(fbUser.uid);
         if (!uData) {
           uData = await createUserDocument(fbUser);
         }
