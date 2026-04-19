@@ -132,8 +132,8 @@ export const VideosView = ({ user, setRefreshPoints }: any) => {
             <button onClick={() => { setPlayingVideo(null); setPointReady(false); }} className="p-2 bg-neutral-800 text-white rounded-xl font-bold text-sm flex items-center gap-1"><X size={18} /> إغلاق</button>
           </div>
           <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex items-center justify-center relative">
-            <video id={`video-player`} className="w-full aspect-video rounded-2xl shadow-2xl bg-black relative z-0">
-               <source src='https://cdn.fluidplayer.com/videos/valerian-1080p.mkv' type='video/mp4' />
+            <video id={`video-player`} className="w-full aspect-video rounded-2xl shadow-2xl bg-black relative z-0" crossOrigin="anonymous">
+               <source src='https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' type='video/mp4' />
             </video>
           </div>
           {toast && <div className={`absolute bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold shadow-xl z-50 ${toast.includes('خطأ') ? 'bg-red-600' : 'bg-green-600'} text-white`}>{toast}</div>}
