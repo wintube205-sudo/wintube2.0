@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, runTransaction } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -15,6 +15,26 @@ export async function signIn() {
   } catch (error) {
     console.error("Auth Error:", error);
     return null;
+  }
+}
+
+export async function signUpWithEmail(email: string, pass: string) {
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, pass);
+    return result.user;
+  } catch (error: any) {
+    console.error("Sign Up Error:", error);
+    throw new Error(error.message);
+  }
+}
+
+export async function signInWithEmail(email: string, pass: string) {
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, pass);
+    return result.user;
+  } catch (error: any) {
+    console.error("Sign In Error:", error);
+    throw new Error(error.message);
   }
 }
 
