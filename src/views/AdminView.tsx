@@ -25,6 +25,11 @@ export const AdminView = ({ user }: any) => {
   
   const onWithdrawalAction = async (id: string, action: 'approved'|'rejected', wData: any) => { 
     await handleAdminWithdrawal(id, action, wData);
+    if (action === 'approved') {
+       import('../lib/firebase').then(({ addNotification }) => {
+           addNotification(wData.userId, 'تم الموافقة على السحب!', `تم تحويل مبلغ $${wData.amount} بنجاح`, 'withdrawal');
+       });
+    }
     showToast('تم الإجراء بنجاح'); 
     loadData(); 
   };
@@ -170,6 +175,7 @@ export const AdminView = ({ user }: any) => {
            </div>
         </div>
       )}
+
       {toast && <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold text-sm bg-green-600 text-white z-50">{toast}</div>}
     </div>
   );

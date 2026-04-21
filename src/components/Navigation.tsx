@@ -1,7 +1,7 @@
-import React from 'react';
-import { Play, Gamepad2, Briefcase, Trophy, User, LogIn, Menu, Wallet, Flame, Users, LayoutDashboard, ShieldCheck, Coins } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, Gamepad2, Briefcase, Trophy, User, LogIn, Menu, Wallet, Flame, Users, LayoutDashboard, ShieldCheck, Coins, Bell } from 'lucide-react';
 
-export const Header = ({ user, points, onOpenAuth, onToggleSidebar, setActiveTab }: any) => (
+export const Header = ({ user, points, onOpenAuth, onToggleSidebar, setActiveTab, unreadNotifications = 0, onOpenNotifications }: any) => (
   <header className="fixed top-0 left-0 right-0 h-16 bg-neutral-950/80 backdrop-blur-md border-b border-neutral-800 z-40 flex items-center justify-between px-4">
     <div className="flex items-center gap-3">
       <button onClick={onToggleSidebar} className="md:hidden text-neutral-400 hover:text-white"><Menu size={24} /></button>
@@ -14,6 +14,12 @@ export const Header = ({ user, points, onOpenAuth, onToggleSidebar, setActiveTab
       <div className="hidden md:flex items-center gap-1 text-green-500 text-xs font-bold px-2 py-1 bg-green-500/10 rounded-full border border-green-500/20"><ShieldCheck size={14} /> آمن</div>
       {user ? (
         <>
+          <button onClick={onOpenNotifications} className="relative p-2 text-neutral-400 hover:text-white transition-colors">
+            <Bell size={20} />
+            {unreadNotifications > 0 && (
+               <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-neutral-950"></span>
+            )}
+          </button>
           <div className="flex items-center gap-2 bg-neutral-900 px-4 py-1.5 rounded-full border border-neutral-800 cursor-pointer hover:bg-neutral-800 transition-colors" onClick={() => setActiveTab('rewards')}>
             <Coins size={16} className="text-amber-400" />
             <span className="text-amber-400 font-bold text-sm">{points.toLocaleString()} PTS</span>

@@ -19,12 +19,14 @@ service cloud.firestore {
     function existing() { return resource.data; }
 
     function isValidUserCreate(data) {
-      return data.keys().hasAll(['name', 'email', 'role', 'points', 'banned', 'createdAt']) &&
+      return data.keys().hasAll(['name', 'email', 'role', 'points', 'banned', 'createdAt', 'level', 'streak']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 60 &&
              data.email is string && data.email.size() > 0 && data.email.size() <= 200 &&
              data.role is string && data.role in ['user', 'admin'] &&
              data.points is number && data.points >= 0 &&
              data.banned is bool &&
+             data.level == 1 &&
+             data.streak == 0 &&
              data.createdAt == request.time;
     }
     
@@ -33,7 +35,9 @@ service cloud.firestore {
              data.email is string && data.email.size() > 0 && data.email.size() <= 200 &&
              data.role is string && data.role in ['user', 'admin'] &&
              data.points is number && data.points >= 0 &&
-             data.banned is bool;
+             data.banned is bool &&
+             data.get('level', 1) is number &&
+             data.get('streak', 0) is number;
     }
 
     match /users/{userId} {
@@ -44,7 +48,7 @@ service cloud.firestore {
         isAdmin() ||
         (
            request.auth.uid == userId &&
-           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'lastVideoClaim', 'lastGameClaim', 'referralCount', 'referralsEarnings']) &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'lastVideoClaim', 'lastGameClaim', 'referralCount', 'referralsEarnings', 'level', 'streak', 'lastLoginClaim']) &&
            incoming().role == existing().role &&
            incoming().banned == existing().banned
         ) ||
@@ -72,6 +76,14 @@ service cloud.firestore {
       match /daily_stats/{dateId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
+      
+      match /notifications/{notificationId} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+        allow create: if isAdmin() || (isSignedIn() && request.auth.uid == userId && incoming().type == 'system');
+        allow update: if isSignedIn() && request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['read']) && incoming().read == true;
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     match /settings/{settingId} {
@@ -83,6 +95,11 @@ service cloud.firestore {
     }
 
     match /games/{gameId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+    
+    match /videos/{videoId} {
       allow read: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }

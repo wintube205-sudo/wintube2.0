@@ -65,6 +65,8 @@ export async function createUserDocument(user: any) {
     referralCount: 0,
     referralsEarnings: 0,
     referredBy: refCode || null,
+    level: 1, // Start at level 1 (Bronze)
+    streak: 0, // Daily login streak
     createdAt: serverTimestamp(),
   };
   await setDoc(userRef, newUser);
@@ -189,8 +191,9 @@ export async function incrementDailyProgress(uid: string, type: 'video' | 'game'
   }
 }
 
-export async function claimDailyReward(uid: string, taskId: 'login' | 'videos' | 'games', reward: number, title: string) {
+export async function claimDailyReward(uid: string, taskId: 'login' | 'videos' | 'games', baseReward: number, title: string) {
   const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
   const statRef = doc(db, 'users', uid, 'daily_stats', today);
   const userRef = doc(db, 'users', uid);
 
@@ -206,19 +209,47 @@ export async function claimDailyReward(uid: string, taskId: 'login' | 'videos' |
 
       const userSnap = await t.get(userRef);
       if (!userSnap.exists()) throw new Error("User not found");
+      
+      let reward = baseReward;
+      let newStreak = userSnap.data()?.streak || 0;
+      let level = userSnap.data()?.level || 1;
+      
+      if (taskId === 'login') {
+         const lastClaimDate = userSnap.data()?.lastLoginClaim;
+         // If claiming yesterday, keep streak. If not, reset to 1.
+         if (lastClaimDate === yesterday) {
+            newStreak = (newStreak + 1) > 7 ? 7 : (newStreak + 1);
+         } else if (lastClaimDate !== today) {
+            newStreak = 1;
+         }
+         // Progressive reward: base * streak
+         reward = newStreak * 20; // 20, 40, 60... up to 140
+      }
+
+      // VIP/Level multiplier (10% extra per level above 1, max 30% for lvl 4)
+      if (taskId !== 'login') {
+         const multiplier = 1 + ((level - 1) * 0.1);
+         reward = Math.floor(baseReward * multiplier);
+      }
+
       newTotal = (userSnap.data()?.points || 0) + reward;
 
       const updates: any = {};
       if (taskId === 'login') updates.loginClaimed = true;
       if (taskId === 'videos') updates.videosClaimed = true;
       if (taskId === 'games') updates.gamesClaimed = true;
-      t.update(statRef, updates);
+      t.set(statRef, updates, { merge: true }); // Use set with merge in case doc doesn't exist
       
-      t.update(userRef, { points: newTotal });
+      const userUpdates: any = { points: newTotal };
+      if (taskId === 'login') {
+         userUpdates.streak = newStreak;
+         userUpdates.lastLoginClaim = today;
+      }
+      t.update(userRef, userUpdates);
 
       const historyRef = doc(collection(db, 'users', uid, 'history'));
       t.set(historyRef, {
-        title: title,
+        title: taskId === 'login' ? `تسجيل الدخول (اليوم ${newStreak})` : title,
         amount: reward,
         type: 'earn',
         createdAt: serverTimestamp()
@@ -228,6 +259,13 @@ export async function claimDailyReward(uid: string, taskId: 'login' | 'videos' |
   } catch (e: any) {
     return { success: false, newPoints: 0, error: e.message };
   }
+}
+
+export async function addNotification(userId: string, title: string, message: string, type: 'reward' | 'system' | 'withdrawal' = 'system') {
+  const notifRef = collection(db, 'users', userId, 'notifications');
+  await addDoc(notifRef, {
+    title, message, type, read: false, createdAt: serverTimestamp()
+  });
 }
 
 // ... more ops will be added directly into components for brevity ...

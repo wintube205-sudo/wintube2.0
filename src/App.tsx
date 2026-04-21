@@ -10,10 +10,39 @@ import { LeaderboardView } from './views/LeaderboardView';
 import { RewardsView } from './views/RewardsView';
 import { ProfileView } from './views/ProfileView';
 import { AdminView } from './views/AdminView';
+import { LegalView } from './views/LegalView';
 
-import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail } from './lib/firebase';
+import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail, db } from './lib/firebase';
 import { onAuthStateChanged, updateProfile } from 'firebase/auth';
-import { User, X, Loader2 } from 'lucide-react';
+import { collection, query, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore';
+import { User, X, Loader2, Bell } from 'lucide-react';
+
+const NotificationsModal = ({ isOpen, onClose, notifications, markAsRead }: any) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" dir="rtl" onClick={onClose}>
+      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md p-6 relative max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 left-4 text-neutral-400"><X size={20} /></button>
+        <div className="flex items-center gap-2 mb-6 text-white text-xl font-bold">
+           <Bell className="text-red-500" />
+           الإشعارات
+        </div>
+        {notifications.length === 0 ? (
+          <div className="text-neutral-500 text-center py-10">لا توجد إشعارات حالياً</div>
+        ) : (
+          <div className="space-y-3">
+            {notifications.map((n: any) => (
+               <div key={n.id} onClick={() => !n.read && markAsRead(n.id)} className={`p-4 rounded-xl border ${n.read ? 'bg-neutral-950 border-neutral-800 opacity-60' : 'bg-neutral-800 border-red-500/30 cursor-pointer'}`}>
+                  <h4 className="font-bold text-white mb-1">{n.title}</h4>
+                  <p className="text-sm text-neutral-400">{n.message}</p>
+               </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegister }: any) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -92,6 +121,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [refreshPoints, setRefreshPoints] = useState(0);
 
   useEffect(() => {
@@ -110,13 +141,28 @@ export default function App() {
         }
         setUser(uData);
         setPoints(uData.points || 0);
+
+        // Subscribe to notifications
+        const notifQuery = query(collection(db, 'users', fbUser.uid, 'notifications'), orderBy('createdAt', 'desc'));
+        onSnapshot(notifQuery, (snapshot) => {
+           const notifs: any[] = [];
+           snapshot.forEach(doc => notifs.push({ id: doc.id, ...doc.data() }));
+           setNotifications(notifs);
+        });
+
       } else {
         setUser(null);
         setPoints(0);
+        setNotifications([]);
       }
     });
     return unsub;
   }, []);
+
+  const markAsRead = async (id: string) => {
+    if(!user?.id) return;
+    await updateDoc(doc(db, 'users', user.id, 'notifications', id), { read: true });
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -172,7 +218,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans selection:bg-red-500/30">
-      <Header user={user} points={points} onOpenAuth={() => setIsAuthOpen(true)} onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} setActiveTab={setActiveTab} />
+      <Header 
+         user={user} 
+         points={points} 
+         onOpenAuth={() => setIsAuthOpen(true)} 
+         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+         setActiveTab={setActiveTab} 
+         unreadNotifications={notifications.filter(n => !n.read).length}
+         onOpenNotifications={() => setIsNotifOpen(true)}
+      />
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={isSidebarOpen} isMobile={true} onCloseSidebar={() => setIsSidebarOpen(false)} user={user} />
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={true} isMobile={false} onCloseSidebar={() => {}} user={user} />
 
@@ -187,6 +241,17 @@ export default function App() {
         {activeTab === 'rewards' && <RewardsView points={points} setRefreshPoints={setRefreshPoints} user={user} />}
         {activeTab === 'profile' && <ProfileView points={points} user={user} />}
         {activeTab === 'admin' && <AdminView user={user} />}
+        
+        {activeTab === 'terms' && <LegalView type="terms" />}
+        {activeTab === 'privacy' && <LegalView type="privacy" />}
+        {activeTab === 'contact' && <LegalView type="contact" />}
+
+        <footer className="mt-auto pt-16 pb-4 border-t border-neutral-900/50 flex flex-wrap justify-center gap-6 text-sm text-neutral-500 font-bold">
+          <button onClick={() => setActiveTab('terms')} className="hover:text-red-500 transition-colors">شروط الاستخدام</button>
+          <button onClick={() => setActiveTab('privacy')} className="hover:text-red-500 transition-colors">سياسة الخصوصية</button>
+          <button onClick={() => setActiveTab('contact')} className="hover:text-red-500 transition-colors">اتصل بنا</button>
+          <div className="w-full text-center mt-2 opacity-50">© 2026 WinTube. جميع الحقوق محفوظة.</div>
+        </footer>
       </main>
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -196,6 +261,12 @@ export default function App() {
         onGoogleLogin={handleGoogleLogin} 
         onEmailLogin={handleEmailLogin}
         onEmailRegister={handleEmailRegister}
+      />
+      <NotificationsModal 
+        isOpen={isNotifOpen} 
+        onClose={() => setIsNotifOpen(false)} 
+        notifications={notifications} 
+        markAsRead={markAsRead} 
       />
     </div>
   );
