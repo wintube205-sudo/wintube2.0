@@ -8,12 +8,14 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [activeAdminTab, setActiveAdminTab] = useState('dashboard');
   const [adminData, setAdminData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const [newGameForm, setNewGameForm] = useState({ title: '', url: '', thumbnail: '' });
   const [settingsForm, setSettingsForm] = useState({ videoPoints: 0, gamePoints: 0, minWithdrawal: 0 });
 
   const loadData = useCallback(() => {
     setLoading(true);
+    setError(null);
     getAdminData().then(res => {
       setAdminData(res);
       if (res.settings) {
@@ -27,6 +29,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
       setLoading(false);
     }).catch(err => {
       console.error("Admin Load Error:", err);
+      setError("حدث خطأ أثناء تحميل البيانات. تحقق من الصلاحيات والاتصال: " + err.message);
       setToast("خطأ في تحميل البيانات: " + err.message);
       setTimeout(() => setToast(''), 3000);
       setLoading(false);
@@ -89,8 +92,10 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
     loadData();
   };
 
-  if (user?.role !== 'admin') return <div className="text-center py-20 text-red-500 font-bold">مرفوض: دخول للإدارة فقط.</div>;
-  if (loading || !adminData) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-red-500" size={40} /></div>;
+  if (user?.role !== 'admin' && user?.email !== 'iq.mh300@gmail.com' && user?.email !== 'wintube205@gmail.com') return <div className="text-center py-20 text-red-500 font-bold">مرفوض: دخول للإدارة فقط.</div>;
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-red-500" size={40} /></div>;
+  if (error) return <div className="text-center py-20 text-red-500 font-bold bg-neutral-900 border border-red-500/20 m-4 rounded-xl">{error}</div>;
+  if (!adminData) return null;
 
   const { totalUsers, totalPointsGiven, pendingWithdrawals, withdrawals, users, games } = adminData;
 

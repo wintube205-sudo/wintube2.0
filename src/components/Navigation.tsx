@@ -47,7 +47,8 @@ export const Sidebar = ({ activeTab, setActiveTab, isOpen, isMobile, onCloseSide
     { id: 'leaderboard', icon: Trophy, label: 'المتصدرين' },
     { id: 'rewards', icon: Wallet, label: 'سحب الأرباح' },
   ];
-  if (user?.role === 'admin') navItems.push({ id: 'admin', icon: LayoutDashboard, label: 'لوحة التحكم', badge: 'مدير' });
+  const isAdmin = user?.role === 'admin' || user?.email === 'iq.mh300@gmail.com' || user?.email === 'wintube205@gmail.com';
+  if (isAdmin) navItems.push({ id: 'admin', icon: LayoutDashboard, label: 'لوحة التحكم', badge: 'مدير' });
 
   const sidebarClass = isMobile 
     ? `fixed inset-y-0 right-0 w-64 bg-neutral-950 border-l border-neutral-800 z-50 transform transition-transform duration-300 overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'}`
