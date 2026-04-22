@@ -10,11 +10,16 @@ export const RewardsView = ({ points, user, setRefreshPoints }: any) => {
 
   const handleWithdraw = async () => {
     if (!user) return showToast('الرجاء تسجيل الدخول أولاً');
-    if (points < 50000) return showToast('الحد الأدنى للسحب 50,000 نقطة');
+    
+    const minWithdrawal = settings?.minWithdrawal || 10;
+    const pointsPerDollar = settings?.pointsPerDollar || 1000;
+    const minPoints = minWithdrawal * pointsPerDollar;
+
+    if (points < minPoints) return showToast(`الحد الأدنى للسحب هو ${minPoints.toLocaleString()} نقطة ($${minWithdrawal})`);
     if (!account) return showToast('يرجى إدخال رقم الحساب');
     
     setLoading(true);
-    const amount = points / 1000; 
+    const amount = points / pointsPerDollar; 
     const res = await submitWithdrawal(user.id, user.name || 'مستخدم', method, amount, points);
     
     if (res.success) {
@@ -38,7 +43,7 @@ export const RewardsView = ({ points, user, setRefreshPoints }: any) => {
       <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6">
         <div className="bg-neutral-950 rounded-xl p-4 mb-6 text-center border border-neutral-800">
           <p className="text-neutral-400 text-sm mb-1">الرصيد القابل للسحب</p>
-          <p className="text-3xl font-black text-green-400">${user ? (points / 1000).toFixed(2) : '0.00'}</p>
+          <p className="text-3xl font-black text-green-400">${user ? (points / (settings?.pointsPerDollar || 1000)).toFixed(2) : '0.00'}</p>
           <p className="text-neutral-500 text-xs mt-2">الرصيد الحالي: {points.toLocaleString()} نقطة</p>
         </div>
         <div className="space-y-4">

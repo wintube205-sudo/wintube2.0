@@ -1,28 +1,48 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LayoutDashboard, Loader2 } from 'lucide-react';
-import { getAdminData, handleAdminWithdrawal } from '../services/api';
+import { LayoutDashboard, Loader2, Settings } from 'lucide-react';
+import { getAdminData, handleAdminWithdrawal, updateGlobalSettings } from '../services/api';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
-export const AdminView = ({ user }: any) => {
+export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [activeAdminTab, setActiveAdminTab] = useState('dashboard');
   const [adminData, setAdminData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
   const [newGameForm, setNewGameForm] = useState({ title: '', url: '', thumbnail: '' });
+  const [settingsForm, setSettingsForm] = useState({ videoPoints: 0, gamePoints: 0, minWithdrawal: 0 });
 
   const loadData = useCallback(() => {
     setLoading(true);
     getAdminData().then(res => {
-      setAdminData(res); 
+      setAdminData(res);
+      if (res.settings) {
+        setSettingsForm({
+          videoPoints: res.settings.videoPoints || 0,
+          gamePoints: res.settings.gamePoints || 0,
+          minWithdrawal: res.settings.minWithdrawal || 0
+        });
+        if (onSettingsUpdated) onSettingsUpdated(res.settings);
+      }
       setLoading(false);
     });
-  }, []);
+  }, [onSettingsUpdated]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
   
+  const onUpdateSettings = async (e: any) => {
+    e.preventDefault();
+    try {
+      await updateGlobalSettings(settingsForm);
+      showToast('تم تحديث الإعدادات بنجاح');
+      loadData();
+    } catch (err: any) {
+      showToast('خطأ: ' + err.message);
+    }
+  };
+
   const onWithdrawalAction = async (id: string, action: 'approved'|'rejected', wData: any) => { 
     await handleAdminWithdrawal(id, action, wData);
     if (action === 'approved') {
@@ -77,6 +97,7 @@ export const AdminView = ({ user }: any) => {
           <button onClick={() => setActiveAdminTab('dashboard')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'dashboard' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>نظرة عامة</button>
           <button onClick={() => setActiveAdminTab('users')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'users' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>المستخدمين</button>
           <button onClick={() => setActiveAdminTab('games')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'games' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الألعاب</button>
+          <button onClick={() => setActiveAdminTab('settings')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'settings' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Settings size={16}/> الإعدادات</button>
         </div>
       </div>
 
@@ -172,6 +193,64 @@ export const AdminView = ({ user }: any) => {
                 <div className="col-span-1 md:col-span-3 text-xs text-neutral-500 mb-2">يمكنك وضع "الرابط المباشر للعبة" أو لصق "كود iframe" بالكامل وسيقوم النظام باستخراج الرابط تلقائياً.</div>
                 <div className="md:col-span-3"><button type="submit" className="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl">إضافة اللعبة HTML5</button></div>
              </form>
+           </div>
+        </div>
+      )}
+
+      {activeAdminTab === 'settings' && (
+        <div className="animate-in fade-in space-y-8">
+           <div>
+             <h3 className="text-xl font-bold text-white mb-4 italic flex items-center gap-2"><Settings className="text-red-500"/> إعدادات النظام العامة</h3>
+             <form onSubmit={onUpdateSettings} className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   <div className="space-y-2">
+                      <label className="text-neutral-400 text-sm font-bold block">مكافأة مشاهدة الفيديو (نقاط)</label>
+                      <input 
+                        type="number" 
+                        value={settingsForm.videoPoints} 
+                        onChange={e => setSettingsForm({...settingsForm, videoPoints: Number(e.target.value)})}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white font-bold focus:border-red-500 transition-colors" 
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-neutral-400 text-sm font-bold block">مكافأة لعب الألعاب (لكل مرة - نقاط)</label>
+                      <input 
+                        type="number" 
+                        value={settingsForm.gamePoints} 
+                        onChange={e => setSettingsForm({...settingsForm, gamePoints: Number(e.target.value)})}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white font-bold focus:border-red-500 transition-colors" 
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-neutral-400 text-sm font-bold block">الحد الأدنى للسحب (بالدولار $)</label>
+                      <input 
+                        type="number" 
+                        value={settingsForm.minWithdrawal} 
+                        onChange={e => setSettingsForm({...settingsForm, minWithdrawal: Number(e.target.value)})}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white font-bold focus:border-red-500 transition-colors" 
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-neutral-400 text-sm font-bold block">سعر صرف الـ 1 دولار (بالنقاط)</label>
+                      <div className="relative">
+                        <input 
+                          type="number" 
+                          value={adminData.settings?.pointsPerDollar || 1000} 
+                          disabled
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-neutral-500 font-bold opacity-50" 
+                        />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xs text-neutral-600 italic">ثابت حالياً عند 1000</div>
+                      </div>
+                   </div>
+                </div>
+                
+                <div className="pt-4 border-t border-neutral-800 flex justify-end">
+                   <button type="submit" className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-black py-4 px-12 rounded-2xl shadow-xl shadow-red-600/10 transition-all transform active:scale-95">حفظ التغييرات</button>
+                </div>
+             </form>
+             <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm">
+                💡 تغيير هذه القيم سيؤثر فوراً على جميع المستخدمين في الصفحة الرئيسية والمهام.
+             </div>
            </div>
         </div>
       )}

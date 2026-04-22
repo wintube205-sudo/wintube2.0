@@ -70,8 +70,41 @@ export async function getAdminData() {
      pendingWithdrawals: withdrawalsSnap.docs.filter(d => d.data().status === 'pending').length,
      withdrawals: withdrawalsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
      users: usersSnap.docs.map(d => ({ id: d.id, ...d.data() })),
-     games: gamesSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+     games: gamesSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+     settings: (await getGlobalSettings())
    };
+}
+
+export async function getGlobalSettings() {
+    const settingsRef = doc(db, 'settings', 'global');
+    try {
+      const snap = await getDoc(settingsRef);
+      if (!snap.exists()) {
+         const defaults = {
+            videoPoints: 10,
+            gamePoints: 15,
+            minWithdrawal: 10, // In Dollars
+            pointsPerDollar: 1000 // Conversion rate
+         };
+         // We do not setDoc here automatically for regular users to avoid "Missing permissions"
+         // AdminView will handle initialization/updates
+         return defaults;
+      }
+      return snap.data();
+    } catch (err) {
+      // Fallback for cases where even read fails (rare)
+      return {
+          videoPoints: 10,
+          gamePoints: 15,
+          minWithdrawal: 10,
+          pointsPerDollar: 1000
+      };
+    }
+}
+
+export async function updateGlobalSettings(newSettings: any) {
+    const settingsRef = doc(db, 'settings', 'global');
+    await setDoc(settingsRef, newSettings, { merge: true });
 }
 
 export async function handleAdminWithdrawal(id: string, action: 'approved'|'rejected', wData: any) {

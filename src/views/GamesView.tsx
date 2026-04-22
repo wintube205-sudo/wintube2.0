@@ -26,11 +26,12 @@ export const GamesView = ({ points, user, setRefreshPoints }: any) => {
     if (isClaiming || !pointReady || !user) return;
     setIsClaiming(true);
     try {
-      const response = await updatePoints(user.id, 5, 'لعب لعبة تسلية', 'earn');
+      const reward = settings?.gamePoints || 5;
+      const response = await updatePoints(user.id, reward, 'لعب لعبة تسلية', 'earn');
       if (response.success) {
         await incrementDailyProgress(user.id, 'game');
         setRefreshPoints((prev: number) => prev + 1);
-        setToast('+ مكافأة آمنة!'); 
+        setToast(`+ مكافأة ${reward} نقطة!`); 
         setPointReady(false); 
         setTimeLeft(30); 
       } else { 
@@ -38,7 +39,7 @@ export const GamesView = ({ points, user, setRefreshPoints }: any) => {
         setPointReady(false); 
       }
     } catch (err) { setToast('حدث خطأ'); } finally { setIsClaiming(false); setTimeout(() => setToast(''), 2000); }
-  }, [isClaiming, pointReady, user]);
+  }, [isClaiming, pointReady, user, settings]);
 
   useEffect(() => {
     let timer: any;

@@ -8,7 +8,10 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+        (request.auth.token.email == 'iq.mh300@gmail.com' && request.auth.token.email_verified == true)
+      );
     }
 
     function isValidId(id) {
@@ -31,33 +34,35 @@ service cloud.firestore {
     }
     
     function isValidUserUpdate(data) {
-      return data.name is string && data.name.size() > 0 && data.name.size() <= 60 &&
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
              data.email is string && data.email.size() > 0 && data.email.size() <= 200 &&
              data.role is string && data.role in ['user', 'admin'] &&
              data.points is number && data.points >= 0 &&
-             data.banned is bool &&
-             data.get('level', 1) is number &&
-             data.get('streak', 0) is number;
+             data.banned is bool;
     }
 
     match /users/{userId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId && isValidUserCreate(incoming()) && incoming().role == 'user' && incoming().points == 0 && incoming().banned == false;
-      allow update: if isSignedIn() && isValidId(userId) && isValidUserUpdate(incoming()) && (
+      allow update: if isSignedIn() && isValidId(userId) && (
         isAdmin() ||
         (
            request.auth.uid == userId &&
-           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'lastVideoClaim', 'lastGameClaim', 'referralCount', 'referralsEarnings', 'level', 'streak', 'lastLoginClaim']) &&
+           isValidUserUpdate(incoming()) &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'lastVideoClaim', 'lastGameClaim', 'referralCount', 'referralsEarnings', 'level', 'streak', 'lastLoginClaim', 'lastLoginClaim']) &&
            incoming().role == existing().role &&
            incoming().banned == existing().banned
         ) ||
         (
            // مسار السماح بتوزيع الأرباح على الدعوة (خارجي)
-           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'referralCount', 'referralsEarnings']) &&
+           isValidUserUpdate(incoming()) &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'referralCount', 'referralsEarnings', 'level', 'streak', 'lastLoginClaim']) &&
            incoming().points == existing().points + 100 &&
            incoming().referralCount == existing().get('referralCount', 0) + 1 &&
-           incoming().referralsEarnings == existing().get('referralsEarnings', 0) + 100
+           incoming().referralsEarnings == existing().get('referralsEarnings', 0) + 100 &&
+           incoming().role == existing().role &&
+           incoming().banned == existing().banned
         )
       );
 
@@ -87,10 +92,11 @@ service cloud.firestore {
     }
 
     match /settings/{settingId} {
-      allow read: if isSignedIn();
+      allow read: if true;
+      allow create: if isAdmin();
       allow update: if isAdmin() &&
-         incoming().videoReward is number && incoming().videoReward > 0 &&
-         incoming().gameReward is number && incoming().gameReward > 0 &&
+         incoming().videoPoints is number && incoming().videoPoints >= 0 &&
+         incoming().gamePoints is number && incoming().gamePoints >= 0 &&
          incoming().minWithdrawal is number && incoming().minWithdrawal > 0;
     }
 
@@ -105,8 +111,8 @@ service cloud.firestore {
     }
 
     match /withdrawals/{withdrawalId} {
-      allow read: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
-      allow list: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() &&
          incoming().keys().hasAll(['userId', 'userName', 'method', 'amount', 'points', 'status', 'createdAt']) &&
          incoming().userId == request.auth.uid &&

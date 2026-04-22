@@ -16,6 +16,7 @@ import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpW
 import { onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { collection, query, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { User, X, Loader2, Bell } from 'lucide-react';
+import { getGlobalSettings } from './services/api';
 
 const NotificationsModal = ({ isOpen, onClose, notifications, markAsRead }: any) => {
   if (!isOpen) return null;
@@ -124,6 +125,11 @@ export default function App() {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [refreshPoints, setRefreshPoints] = useState(0);
+  const [settings, setSettings] = useState<any>(null);
+
+  useEffect(() => {
+    getGlobalSettings().then(res => setSettings(res));
+  }, []);
 
   useEffect(() => {
     // Check for referral code in URL
@@ -232,15 +238,15 @@ export default function App() {
 
       <main className="md:pr-64 pt-20 pb-24 md:pb-8 min-h-screen flex flex-col px-4 md:px-8">
         {activeTab === 'home' && <HomeView setActiveTab={setActiveTab} />}
-        {activeTab === 'videos' && <VideosView setRefreshPoints={setRefreshPoints} user={user} />}
+        {activeTab === 'videos' && <VideosView setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
         {activeTab === 'offers' && <OffersView user={user} setRefreshPoints={setRefreshPoints} />}
         {activeTab === 'earn' && <EarnView points={points} setRefreshPoints={setRefreshPoints} user={user} setActiveTab={setActiveTab} />}
-        {activeTab === 'games' && <GamesView points={points} setRefreshPoints={setRefreshPoints} user={user} />}
+        {activeTab === 'games' && <GamesView points={points} setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
         {activeTab === 'referrals' && <ReferralsView user={user} />}
         {activeTab === 'leaderboard' && <LeaderboardView user={user} points={points} />}
-        {activeTab === 'rewards' && <RewardsView points={points} setRefreshPoints={setRefreshPoints} user={user} />}
+        {activeTab === 'rewards' && <RewardsView points={points} setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
         {activeTab === 'profile' && <ProfileView points={points} user={user} />}
-        {activeTab === 'admin' && <AdminView user={user} />}
+        {activeTab === 'admin' && <AdminView user={user} onSettingsUpdated={(s: any) => setSettings(s)} />}
         
         {activeTab === 'terms' && <LegalView type="terms" />}
         {activeTab === 'privacy' && <LegalView type="privacy" />}
