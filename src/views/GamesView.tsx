@@ -4,7 +4,7 @@ import { updatePoints, incrementDailyProgress } from '../lib/firebase';
 import { collection, getDocs, query, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
-export const GamesView = ({ points, user, setRefreshPoints }: any) => {
+export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => {
   const [bet, setBet] = useState(10);
   const [result, setResult] = useState<any>(null);
   const [isRolling, setIsRolling] = useState(false);

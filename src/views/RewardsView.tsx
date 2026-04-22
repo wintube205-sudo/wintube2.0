@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Wallet } from 'lucide-react';
 import { submitWithdrawal } from '../services/api';
 
-export const RewardsView = ({ points, user, setRefreshPoints }: any) => {
+export const RewardsView = ({ points, user, setRefreshPoints, settings }: any) => {
   const [toast, setToast] = useState('');
   const [method, setMethod] = useState('USDT (TRC20)');
   const [account, setAccount] = useState('');

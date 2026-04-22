@@ -210,7 +210,6 @@ export default function App() {
     const fbUser = await signUpWithEmail(e, p);
     if (fbUser) {
         await updateProfile(fbUser, { displayName: name });
-        fbUser.displayName = name; // Update local reference
         let uData: any = await getUserData(fbUser.uid);
         if (!uData) {
           uData = await createUserDocument(fbUser);

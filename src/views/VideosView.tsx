@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Play, EyeOff, Loader2, Gift, Clock, X, Search } from 'lucide-react';
 import { updatePoints, incrementDailyProgress } from '../lib/firebase';
 
-export const VideosView = ({ user, setRefreshPoints }: any) => {
+export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingVideo, setPlayingVideo] = useState<any>(null);

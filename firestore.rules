@@ -57,7 +57,7 @@ service cloud.firestore {
         (
            // مسار السماح بتوزيع الأرباح على الدعوة (خارجي)
            isValidUserUpdate(incoming()) &&
-           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'referralCount', 'referralsEarnings', 'level', 'streak', 'lastLoginClaim']) &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'referralCount', 'referralsEarnings']) &&
            incoming().points == existing().points + 100 &&
            incoming().referralCount == existing().get('referralCount', 0) + 1 &&
            incoming().referralsEarnings == existing().get('referralsEarnings', 0) + 100 &&
@@ -101,7 +101,7 @@ service cloud.firestore {
     }
 
     match /games/{gameId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
     
