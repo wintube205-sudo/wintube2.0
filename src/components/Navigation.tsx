@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Play, Gamepad2, Briefcase, Trophy, User, LogIn, Menu, Wallet, Flame, Users, LayoutDashboard, ShieldCheck, Coins, Bell } from 'lucide-react';
+import { Play, Gamepad2, Briefcase, Trophy, User, LogIn, Menu, Wallet, Flame, Users, LayoutDashboard, ShieldCheck, Coins, Bell, LogOut } from 'lucide-react';
+import { signOut } from '../lib/firebase';
 
 export const Header = ({ user, points, onOpenAuth, onToggleSidebar, setActiveTab, unreadNotifications = 0, onOpenNotifications }: any) => (
   <header className="fixed top-0 left-0 right-0 h-16 bg-neutral-950/80 backdrop-blur-md border-b border-neutral-800 z-40 flex items-center justify-between px-4">
@@ -67,6 +68,14 @@ export const Sidebar = ({ activeTab, setActiveTab, isOpen, isMobile, onCloseSide
               </button>
             );
           })}
+          
+          {user && (
+            <div className="mt-auto pt-8 pb-4">
+              <button onClick={() => { signOut(); setActiveTab('home'); if(isMobile) onCloseSidebar(); }} className="flex items-center gap-4 px-4 py-3 rounded-xl transition-all font-bold text-sm text-right w-full text-red-500 hover:bg-neutral-900 border border-transparent hover:border-red-500/20">
+                <LogOut size={20} /> تسجيل خروج
+              </button>
+            </div>
+          )}
         </nav>
       </aside>
     </>

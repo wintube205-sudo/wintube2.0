@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { History, Coins, Trophy, Flame, Users } from 'lucide-react';
+import { History, Coins, Trophy, Flame, Users, LogOut } from 'lucide-react';
 import { getUserHistory } from '../services/api';
+import { signOut } from '../lib/firebase';
 
 export const ProfileView = ({ user, points }: any) => {
   const [history, setHistory] = useState<any[]>([]);
@@ -26,6 +27,9 @@ export const ProfileView = ({ user, points }: any) => {
             </h2>
             <p className="text-neutral-400">{user.email}</p>
          </div>
+         <button onClick={() => signOut()} className="mr-auto bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors font-bold text-sm">
+           <LogOut size={16} className="hidden sm:block" /> تسجيل خروج
+         </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
