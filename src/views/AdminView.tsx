@@ -25,6 +25,11 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
         if (onSettingsUpdated) onSettingsUpdated(res.settings);
       }
       setLoading(false);
+    }).catch(err => {
+      console.error("Admin Load Error:", err);
+      setToast("خطأ في تحميل البيانات: " + err.message);
+      setTimeout(() => setToast(''), 3000);
+      setLoading(false);
     });
   }, [onSettingsUpdated]);
 
