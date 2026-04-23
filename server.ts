@@ -81,6 +81,59 @@ async function startServer() {
     }
   });
 
+  // إعداد مسار استقبال إشعارات CPAGrip
+  // الرابط الجديد الخاص بك في CPAGrip سيكون:
+  // https://wintube.win/api/postback/cpagrip?tracking_id={tracking_id}&payout={payout}&offer_id={offer_id}&ip={ip}
+  app.get("/api/postback/cpagrip", async (req, res) => {
+    const tracking_id = req.query.tracking_id as string; // هو Id المستخدم في قاعدة بياناتنا
+    const payout = req.query.payout as string; // الربح بالدولار (مثلاً 1.25)
+    const offer_id = req.query.offer_id as string;
+
+    console.log(`[إشعار جديد من CPAGrip] 🎉`);
+    console.log(`المستخدم: ${tracking_id}, الربح: ${payout}, العرض: ${offer_id}`);
+
+    if (!tracking_id || !payout) {
+      return res.status(400).send("Missing tracking_id or payout");
+    }
+
+    try {
+      const db = admin.firestore();
+      
+      // جلب إعدادات النقاط لمعرفة كم نقطة لكل دولار
+      const settingsSnap = await db.collection('settings').doc('global').get();
+      const pointsPerDollar = settingsSnap.exists ? (settingsSnap.data()?.pointsPerDollar || 1000) : 1000;
+      
+      const pointsToAdd = Math.floor(Number(payout) * pointsPerDollar);
+
+      if (pointsToAdd > 0) {
+        const userRef = db.collection('users').doc(tracking_id);
+        const userSnap = await userRef.get();
+
+        if (userSnap.exists) {
+          await db.runTransaction(async (t) => {
+            const doc = await t.get(userRef);
+            const currentPoints = doc.data()?.points || 0;
+            t.update(userRef, { points: currentPoints + pointsToAdd });
+
+            // تسجيل التاريخ
+            const historyRef = userRef.collection('history').doc(`cpagrip_${offer_id}_${Date.now()}`);
+            t.set(historyRef, {
+              title: 'إكمال عرض (CPAGrip)',
+              amount: pointsToAdd,
+              type: 'earn',
+              createdAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+          });
+          console.log(`تم إضافة ${pointsToAdd} نقطة للمستخدم ${tracking_id} من CPAGrip!`);
+        }
+      }
+      res.status(200).send("OK");
+    } catch (error) {
+      console.error("CPA Grip Postback Error:", error);
+      res.status(500).send("Error");
+    }
+  });
+
   // إعداد Vite Middleware ليعمل الخادم كـ Full-Stack
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

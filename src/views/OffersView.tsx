@@ -1,12 +1,56 @@
-import React, { useState } from 'react';
-import { Briefcase, Info, X, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Briefcase, Info, X, ExternalLink, Loader2, Gift, ChevronRight } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export const OffersView = ({ user }: any) => {
   const [activeWall, setActiveWall] = useState<any>(null);
+  const [nativeOffers, setNativeOffers] = useState<any[]>([]);
+  const [loadingOffers, setLoadingOffers] = useState(false);
+  const [pointsPerDollar, setPointsPerDollar] = useState(1000);
 
-  // هنا نضع روابط جدران العروض الخاصة بك
-  // يجب عليك التسجيل في هذه الشركات، وإنشاء تطبيق، ثم نسخ "رابط العرض" ووضعه هنا.
-  // لاحظ كيف نرسل `[USER_ID]` لكي تعرف الشركة من هو المستخدم الذي أكمل العرض.
+  useEffect(() => {
+    // Fetch global settings to get points exchange rate
+    const fetchSettings = async () => {
+      try {
+        const settingsSnap = await getDoc(doc(db, 'settings', 'global'));
+        if (settingsSnap.exists()) {
+          setPointsPerDollar(settingsSnap.data().pointsPerDollar || 1000);
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  useEffect(() => {
+    // Fetch CPAGrip offers
+    const fetchCpaGripOffers = async () => {
+      setLoadingOffers(true);
+      try {
+        const userId = user?.id || 'guest';
+        const url = `https://www.cpagrip.com/common/offer_feed_json.php?user_id=2507811&pubkey=296f0c770b5322f24936b50aedcdb1b3&key=2e47a59b99cb8a12a2e766f783f4f1d2&tracking_id=${userId}`;
+        
+        // Using a proxy or just direct fetch if possible. 
+        // Note: Direct fetch might fail due to CORS in some cases, but for JSON feeds they usually allow it.
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data && data.offers) {
+          setNativeOffers(data.offers);
+        }
+      } catch (err) {
+        console.error("Error fetching CPAGrip offers:", err);
+      } finally {
+        setLoadingOffers(false);
+      }
+    };
+
+    fetchCpaGripOffers();
+  }, [user]);
+
+  // روابط جدران العروض
   const providers = [
     { 
       id: 'mylead', 
@@ -23,15 +67,22 @@ export const OffersView = ({ user }: any) => {
       alert('الرجاء تسجيل الدخول أولاً للاستفادة من العروض');
       return;
     }
-    
-    // استبدال كلمة [USER_ID] برقم المستخدم الفعلي لدينا في قاعدة البيانات (لجدران العروض القياسية MyLead)
     const finalUrl = provider.urlTemplate.replace('[USER_ID]', user.id);
-    
     setActiveWall({ ...provider, finalUrl });
   };
 
+  const handleOpenOffer = (offer: any) => {
+    if (!user) {
+      alert('الرجاء تسجيل الدخول أولاً للاستفادة من العروض');
+      return;
+    }
+    // Append tracking_id to the offer link
+    const finalLink = `${offer.offerlink}&tracking_id=${user.id}`;
+    window.open(finalLink, '_blank');
+  };
+
   return (
-    <div className="max-w-4xl mx-auto animate-in fade-in w-full" dir="rtl">
+    <div className="max-w-4xl mx-auto animate-in fade-in w-full pb-20" dir="rtl">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <h2 className="text-2xl font-black text-white flex items-center gap-2"><Briefcase className="text-emerald-500" /> جدران العروض</h2>
         <div className="bg-emerald-500/10 text-emerald-500 px-4 py-2 rounded-xl font-bold text-sm text-center">
@@ -47,6 +98,54 @@ export const OffersView = ({ user }: any) => {
         </div>
       </div>
 
+      {/* CPAGrip Native Offers */}
+      <div className="mb-10">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <Gift className="text-amber-500" size={20} />
+          عروض سريعة ومكافآت فورية
+        </h3>
+        
+        {loadingOffers ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="animate-spin text-emerald-500" size={32} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            {nativeOffers.length > 0 ? (
+              nativeOffers.map((offer: any) => {
+                const points = Math.floor(parseFloat(offer.payout) * pointsPerDollar);
+                return (
+                  <div 
+                    key={offer.offer_id} 
+                    onClick={() => handleOpenOffer(offer)}
+                    className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex items-center gap-4 hover:border-emerald-500 transition-all cursor-pointer group"
+                  >
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-800 flex-shrink-0">
+                      <img src={offer.offerphoto} alt={offer.title} className="w-full h-full object-cover" onError={(e: any) => e.target.src = 'https://via.placeholder.com/64?text=Offer'} />
+                    </div>
+                    <div className="flex-grow min-w-0">
+                      <h4 className="font-bold text-white text-sm sm:text-base truncate">{offer.title}</h4>
+                      <p className="text-xs text-neutral-400 truncate">{offer.category}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="bg-emerald-600 text-white px-3 py-1 rounded-lg text-xs font-black">
+                        +{points.toLocaleString()} نقطة
+                      </div>
+                      <ChevronRight size={16} className="text-neutral-600 group-hover:text-emerald-500 transition-colors" />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-10 bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-800 text-neutral-500">
+                لا توجد عروض متاحة حالياً لبلدك. جرب لاحقاً!
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <h3 className="text-lg font-bold text-white mb-4">شركات العروض الأخرى</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {providers.map(provider => (
           <div key={provider.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 hover:border-neutral-600 transition-colors flex flex-col justify-between">
