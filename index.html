@@ -9,6 +9,14 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script type="text/javascript">
+        window.aclib = window.aclib || {};
+        try {
+            aclib.runAutoTag({
+                zoneId: 'rje1qkto0e',
+            });
+        } catch(e) { console.warn('Adcash aclib not fully loaded or error:', e); }
+    </script>
   </body>
 </html>
 
