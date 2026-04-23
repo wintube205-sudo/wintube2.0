@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Play, EyeOff, Loader2, Gift, Clock, X, Search } from 'lucide-react';
 import { updatePoints, incrementDailyProgress } from '../lib/firebase';
+import { AdBanner } from '../components/AdBanner';
 
 export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
   const [videos, setVideos] = useState<any[]>([]);
@@ -133,8 +134,12 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
             </div>
             <button onClick={() => { setPlayingVideo(null); setPointReady(false); }} className="p-2 bg-neutral-800 text-white rounded-xl font-bold text-sm flex items-center gap-1"><X size={18} /> إغلاق</button>
           </div>
-          <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex items-center justify-center relative">
-            <iframe src={`https://www.dailymotion.com/embed/video/${playingVideo.id}?autoplay=1&mute=0`} allowFullScreen className="w-full aspect-video rounded-2xl shadow-2xl border border-neutral-800 bg-black relative z-0"></iframe>
+          <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex flex-col items-center justify-center relative overflow-y-auto">
+            <AdBanner />
+            <div className="w-full relative flex-grow max-h-[70vh]">
+               <iframe src={`https://www.dailymotion.com/embed/video/${playingVideo.id}?autoplay=1&mute=0`} allowFullScreen className="w-full h-full aspect-video rounded-2xl shadow-2xl border border-neutral-800 bg-black relative z-0"></iframe>
+            </div>
+            <AdBanner />
           </div>
           {toast && <div className={`absolute bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold shadow-xl z-50 ${toast.includes('خطأ') ? 'bg-red-600' : 'bg-green-600'} text-white`}>{toast}</div>}
         </div>

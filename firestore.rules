@@ -98,7 +98,8 @@ service cloud.firestore {
       allow update: if isAdmin() &&
          incoming().videoPoints is number && incoming().videoPoints >= 0 &&
          incoming().gamePoints is number && incoming().gamePoints >= 0 &&
-         incoming().minWithdrawal is number && incoming().minWithdrawal > 0;
+         incoming().minWithdrawal is number && incoming().minWithdrawal > 0 &&
+         (!incoming().keys().hasAny(['pointsPerDollar']) || (incoming().pointsPerDollar is number && incoming().pointsPerDollar > 0));
     }
 
     match /games/{gameId} {

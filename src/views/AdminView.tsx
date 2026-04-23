@@ -22,7 +22,8 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
         setSettingsForm({
           videoPoints: res.settings.videoPoints || 0,
           gamePoints: res.settings.gamePoints || 0,
-          minWithdrawal: res.settings.minWithdrawal || 0
+          minWithdrawal: res.settings.minWithdrawal || 0,
+          pointsPerDollar: res.settings.pointsPerDollar || 1000
         });
         if (onSettingsUpdated) onSettingsUpdated(res.settings);
       }
@@ -264,15 +265,13 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                    </div>
                    <div className="space-y-2">
                       <label className="text-neutral-400 text-sm font-bold block">سعر صرف الـ 1 دولار (بالنقاط)</label>
-                      <div className="relative">
-                        <input 
-                          type="number" 
-                          value={adminData.settings?.pointsPerDollar || 1000} 
-                          disabled
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-neutral-500 font-bold opacity-50" 
-                        />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xs text-neutral-600 italic">ثابت حالياً عند 1000</div>
-                      </div>
+                      <input 
+                        type="number" 
+                        value={settingsForm.pointsPerDollar || 1000} 
+                        onChange={e => setSettingsForm({...settingsForm, pointsPerDollar: Number(e.target.value)})}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white font-bold focus:border-red-500 transition-colors" 
+                      />
+                      <div className="text-xs text-neutral-500 italic mt-1">مثال: لو وضعت 10,000 فهذا يعني كل 10 آلاف نقطة = 1 دولار</div>
                    </div>
                 </div>
                 

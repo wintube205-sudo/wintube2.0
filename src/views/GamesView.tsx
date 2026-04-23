@@ -3,6 +3,7 @@ import { Gamepad2, X } from 'lucide-react';
 import { updatePoints, incrementDailyProgress } from '../lib/firebase';
 import { collection, getDocs, query, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { AdBanner } from '../components/AdBanner';
 
 export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => {
   const [bet, setBet] = useState(10);
@@ -146,10 +147,17 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
             <div className="flex items-center gap-4 text-white font-bold"><Gamepad2 className="text-blue-500" size={20} /> {playingArcadeGame.title}</div>
             <button onClick={() => { setPlayingArcadeGame(null); setPointReady(false); }} className="p-2 bg-neutral-800 text-white rounded-xl flex items-center gap-1"><X size={18} /> إغلاق</button>
           </div>
-          <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex items-center justify-center relative">
-             <iframe src={playingArcadeGame.url} allowFullScreen className="w-full h-full min-h-[70vh] rounded-2xl bg-white relative z-0"></iframe>
+          <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex flex-col items-center justify-center relative overflow-y-auto">
+             <AdBanner />
+             <div className="w-full relative flex-grow min-h-[50vh] max-h-[80vh]">
+               <iframe src={playingArcadeGame.url} allowFullScreen className="w-full h-full rounded-2xl bg-white relative z-0"></iframe>
+             </div>
+             <AdBanner />
+             
              {pointReady && (
-                <div className="absolute bottom-8 z-20"><button onClick={requestGamePointFromServer} disabled={isClaiming} className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-black py-3 px-8 rounded-full animate-bounce">استلم النقطة وتابع اللعب ✨</button></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
+                  <button onClick={requestGamePointFromServer} disabled={isClaiming} className="pointer-events-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-black py-4 px-10 rounded-full animate-bounce shadow-2xl scale-125 border-4 border-white/20">استلم النقطة وتابع اللعب ✨</button>
+                </div>
              )}
           </div>
         </div>
