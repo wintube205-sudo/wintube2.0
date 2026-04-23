@@ -92,6 +92,12 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
     loadData();
   };
 
+  const onToggleFeaturedGame = async (id: string, isFeatured: boolean) => {
+    await updateDoc(doc(db, 'games', id), { isFeatured: !isFeatured });
+    showToast('تم التحديث بنجاح');
+    loadData();
+  };
+
   if (user?.role !== 'admin' && user?.email !== 'iq.mh300@gmail.com' && user?.email !== 'wintube205@gmail.com') return <div className="text-center py-20 text-red-500 font-bold">مرفوض: دخول للإدارة فقط.</div>;
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-red-500" size={40} /></div>;
   if (error) return <div className="text-center py-20 text-red-500 font-bold bg-neutral-900 border border-red-500/20 m-4 rounded-xl">{error}</div>;
@@ -174,9 +180,13 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                        <tr key={g.id} className="border-b border-neutral-800">
                           <td className="p-4 flex items-center gap-3">
                             <img src={g.thumbnail} alt={g.title} className="w-10 h-10 rounded-lg object-cover bg-neutral-800" />
-                            {g.title}
+                            <div className="flex flex-col">
+                              <span>{g.title}</span>
+                              {g.isFeatured && <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full w-max mt-1">مميزة</span>}
+                            </div>
                           </td>
-                          <td className="p-4 text-center">
+                          <td className="p-4 flex flex-wrap justify-center gap-2">
+                             <button onClick={() => onToggleFeaturedGame(g.id, !!g.isFeatured)} className={`${g.isFeatured ? 'bg-neutral-800 text-neutral-400' : 'bg-amber-600/20 text-amber-500'} hover:bg-neutral-700 transition-colors px-3 py-1 rounded`}>{g.isFeatured ? 'إلغاء التمييز' : 'تمييز كـ مميزة'}</button>
                              <button onClick={() => onDeleteGame(g.id)} className="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white transition-colors px-3 py-1 rounded">حذف</button>
                           </td>
                        </tr>

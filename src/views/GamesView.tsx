@@ -108,14 +108,36 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
           {result && <div className={`mt-6 text-xl font-black ${result.color}`}>{result.msg}</div>}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {arcadeGames.length === 0 ? <p className="col-span-full text-center py-10 text-neutral-500">جاري تحميل الألعاب...</p> : arcadeGames.map((game) => (
-            <div key={game.id} onClick={() => { setPlayingArcadeGame(game); setTimeLeft(30); setPointReady(false); }} className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden cursor-pointer hover:border-blue-500">
-              <div className="aspect-square bg-neutral-950 p-4 flex items-center justify-center"><img src={game.thumbnail} className="w-24 h-24 object-contain" onError={(e: any) => { e.target.src = 'https://via.placeholder.com/150?text=Game'; }} alt={game.title} /></div>
-              <div className="p-3 text-center border-t border-neutral-800"><h3 className="font-bold text-white text-sm">{game.title}</h3></div>
+        <>
+          {arcadeGames.filter(g => g.isFeatured).length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">✨ ألعاب مميزة</h3>
+              <div className="flex gap-4 overflow-x-auto pb-4 snap-x min-h-[250px] hide-scrollbar">
+                {arcadeGames.filter(g => g.isFeatured).map((game) => (
+                  <div key={game.id} onClick={() => { setPlayingArcadeGame(game); setTimeLeft(30); setPointReady(false); }} className="snap-center shrink-0 w-80 relative rounded-3xl overflow-hidden cursor-pointer group border border-neutral-800 hover:border-amber-500 transition-colors">
+                    <img src={game.thumbnail} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e: any) => { e.target.src = 'https://via.placeholder.com/400x250?text=Game'; }} alt={game.title} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 p-6 w-full">
+                      <span className="text-[10px] font-bold tracking-widest text-amber-500 uppercase mb-1 block">لعبة مميزة</span>
+                      <h3 className="text-2xl font-black text-white">{game.title}</h3>
+                      <button className="mt-3 bg-white/10 backdrop-blur-md text-white px-4 py-2 rounded-xl text-sm font-bold w-max hover:bg-white hover:text-black transition-colors">العب الآن</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+
+          <h3 className="text-lg font-bold text-white mb-4">كل الألعاب</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {arcadeGames.length === 0 ? <p className="col-span-full text-center py-10 text-neutral-500">جاري تحميل الألعاب...</p> : arcadeGames.map((game) => (
+              <div key={game.id} onClick={() => { setPlayingArcadeGame(game); setTimeLeft(30); setPointReady(false); }} className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden cursor-pointer hover:border-blue-500 group transition-colors">
+                <div className="aspect-square bg-neutral-950 relative overflow-hidden"><img src={game.thumbnail} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" onError={(e: any) => { e.target.src = 'https://via.placeholder.com/150?text=Game'; }} alt={game.title} /></div>
+                <div className="p-3 border-t border-neutral-800"><h3 className="font-bold text-white text-sm truncate">{game.title}</h3></div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {playingArcadeGame && (
