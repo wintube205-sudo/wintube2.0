@@ -249,7 +249,7 @@ const App = () => {
         {activeTab === 'leaderboard' && <LeaderboardView user={user} points={points} />}
         {activeTab === 'rewards' && <RewardsView points={points} setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
         {activeTab === 'profile' && <ProfileView points={points} user={user} />}
-        {activeTab === 'admin' && <AdminView user={user} onSettingsUpdated={(s: any) => setSettings(s)} />}
+        {activeTab === 'admin' && <AdminView user={user} onSettingsUpdated={setSettings} />}
         
         {activeTab === 'terms' && <LegalView type="terms" />}
         {activeTab === 'privacy' && <LegalView type="privacy" />}
