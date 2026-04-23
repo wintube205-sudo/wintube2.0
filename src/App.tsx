@@ -116,7 +116,7 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
   );
 };
 
-export default function App() {
+const App = () => {
   const [user, setUser] = useState<any>(null);
   const [points, setPoints] = useState(0);
   const [activeTab, setActiveTab] = useState('home');
@@ -147,6 +147,9 @@ export default function App() {
         }
         setUser(uData);
         setPoints(uData.points || 0);
+
+        const isAdminCheck = uData.role === 'admin' || (fbUser.email && (fbUser.email.toLowerCase().trim() === 'iq.mh300@gmail.com' || fbUser.email.toLowerCase().trim() === 'wintube205@gmail.com'));
+        if (isAdminCheck) setActiveTab('admin');
 
         // Subscribe to notifications
         const notifQuery = query(collection(db, 'users', fbUser.uid, 'notifications'), orderBy('createdAt', 'desc'));
@@ -188,7 +191,8 @@ export default function App() {
         }
         setUser(uData);
         setPoints(uData.points || 0);
-        if (uData.role === 'admin') setActiveTab('admin');
+        const isAdminCheck = uData.role === 'admin' || (fbUser.email && (fbUser.email.toLowerCase().trim() === 'iq.mh300@gmail.com' || fbUser.email.toLowerCase().trim() === 'wintube205@gmail.com'));
+        if (isAdminCheck) setActiveTab('admin');
     }
   };
 
@@ -275,4 +279,6 @@ export default function App() {
       />
     </div>
   );
-}
+};
+
+export default App;

@@ -98,9 +98,21 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
     loadData();
   };
 
-  if (user?.role !== 'admin' && user?.email !== 'iq.mh300@gmail.com' && user?.email !== 'wintube205@gmail.com') return <div className="text-center py-20 text-red-500 font-bold">مرفوض: دخول للإدارة فقط.</div>;
+  const isAdminEmail = user?.email && (user.email.toLowerCase().trim() === 'iq.mh300@gmail.com' || user.email.toLowerCase().trim() === 'wintube205@gmail.com');
+  const hasAccess = user?.role === 'admin' || isAdminEmail;
+
+  if (!hasAccess) return <div className="text-center py-20 text-red-500 font-bold">مرفوض: دخول للإدارة فقط. (الإيميل الحالي: {user?.email})</div>;
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-red-500" size={40} /></div>;
-  if (error) return <div className="text-center py-20 text-red-500 font-bold bg-neutral-900 border border-red-500/20 m-4 rounded-xl">{error}</div>;
+  if (error) return <div className="text-center py-20 text-red-500 font-bold bg-neutral-900 border border-red-500/20 m-4 rounded-xl flex flex-col items-center gap-4">
+    <p>{error}</p>
+    <div className="text-sm text-neutral-400 bg-black/50 p-4 rounded-lg w-full max-w-xl text-left font-mono" dir="ltr">
+      Debug Info: <br />
+      Email: {user?.email} <br />
+      Role: {user?.role} <br />
+      UID: {user?.id}
+    </div>
+    <button onClick={loadData} className="px-6 py-2 bg-red-600 text-white rounded-lg">إعادة المحاولة</button>
+  </div>;
   if (!adminData) return null;
 
   const { totalUsers, totalPointsGiven, pendingWithdrawals, withdrawals, users, games } = adminData;
