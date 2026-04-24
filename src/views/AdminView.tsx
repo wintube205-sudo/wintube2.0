@@ -11,7 +11,10 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const [newGameForm, setNewGameForm] = useState({ title: '', url: '', thumbnail: '' });
-  const [settingsForm, setSettingsForm] = useState({ videoPoints: 0, gamePoints: 0, minWithdrawal: 0 });
+  const [settingsForm, setSettingsForm] = useState<any>({ 
+    videoPoints: 0, gamePoints: 0, minWithdrawal: 0, pointsPerDollar: 1000,
+    taskRewardLogin: 0, taskTargetVideos: 0, taskRewardVideos: 0, taskTargetGames: 0, taskRewardGames: 0
+  });
 
   const loadData = useCallback(() => {
     setLoading(true);
@@ -23,7 +26,12 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
           videoPoints: res.settings.videoPoints || 0,
           gamePoints: res.settings.gamePoints || 0,
           minWithdrawal: res.settings.minWithdrawal || 0,
-          pointsPerDollar: res.settings.pointsPerDollar || 1000
+          pointsPerDollar: res.settings.pointsPerDollar || 1000,
+          taskRewardLogin: res.settings.taskRewardLogin || 0,
+          taskTargetVideos: res.settings.taskTargetVideos || 0,
+          taskRewardVideos: res.settings.taskRewardVideos || 0,
+          taskTargetGames: res.settings.taskTargetGames || 0,
+          taskRewardGames: res.settings.taskRewardGames || 0
         });
         if (onSettingsUpdated) onSettingsUpdated(res.settings);
       }
@@ -140,11 +148,22 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
           <h3 className="text-xl font-bold text-white mb-4">طلبات السحب</h3>
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden overflow-x-auto">
             <table className="w-full text-right text-sm">
-               <thead className="bg-neutral-950 text-neutral-400 border-b border-neutral-800"><tr><th className="p-4">المستخدم</th><th className="p-4">الوسيلة</th><th className="p-4">المبلغ</th><th className="p-4 text-center">الإجراء</th></tr></thead>
+               <thead className="bg-neutral-950 text-neutral-400 border-b border-neutral-800">
+                 <tr>
+                   <th className="p-4">المستخدم</th>
+                   <th className="p-4">الوسيلة</th>
+                   <th className="p-4">رقم الحساب</th>
+                   <th className="p-4">المبلغ</th>
+                   <th className="p-4 text-center">الإجراء</th>
+                 </tr>
+               </thead>
                <tbody className="text-white">
                   {withdrawals.map((req: any) => (
                      <tr key={req.id} className="border-b border-neutral-800">
-                        <td className="p-4">{req.userName}</td><td className="p-4">{req.method}</td><td className="p-4 text-green-400 font-bold">${req.amount}</td>
+                        <td className="p-4">{req.userName}</td>
+                        <td className="p-4">{req.method}</td>
+                        <td className="p-4 font-mono text-xs">{req.account || 'غير محدد'}</td>
+                        <td className="p-4 text-green-400 font-bold">${req.amount?.toFixed?.(2) || req.amount}</td>
                         <td className="p-4 flex justify-center gap-2">
                            {req.status === 'pending' ? (
                              <><button onClick={() => onWithdrawalAction(req.id, 'approved', req)} className="bg-green-600/20 text-green-500 px-3 py-1 rounded">دفع</button><button onClick={() => onWithdrawalAction(req.id, 'rejected', req)} className="bg-red-600/20 text-red-500 px-3 py-1 rounded">رفض</button></>
@@ -241,7 +260,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                       <input 
                         type="number" 
                         value={settingsForm.videoPoints} 
-                        onChange={e => setSettingsForm({...settingsForm, videoPoints: Number(e.target.value)})}
+                        onChange={e => setSettingsForm({...settingsForm, videoPoints: e.target.value === '' ? '' : Number(e.target.value)})}
                         className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white font-bold focus:border-red-500 transition-colors" 
                       />
                    </div>
@@ -250,7 +269,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                       <input 
                         type="number" 
                         value={settingsForm.gamePoints} 
-                        onChange={e => setSettingsForm({...settingsForm, gamePoints: Number(e.target.value)})}
+                        onChange={e => setSettingsForm({...settingsForm, gamePoints: e.target.value === '' ? '' : Number(e.target.value)})}
                         className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white font-bold focus:border-red-500 transition-colors" 
                       />
                    </div>
@@ -259,7 +278,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                       <input 
                         type="number" 
                         value={settingsForm.minWithdrawal} 
-                        onChange={e => setSettingsForm({...settingsForm, minWithdrawal: Number(e.target.value)})}
+                        onChange={e => setSettingsForm({...settingsForm, minWithdrawal: e.target.value === '' ? '' : Number(e.target.value)})}
                         className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white font-bold focus:border-red-500 transition-colors" 
                       />
                    </div>
@@ -267,15 +286,67 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                       <label className="text-neutral-400 text-sm font-bold block">سعر صرف الـ 1 دولار (بالنقاط)</label>
                       <input 
                         type="number" 
-                        value={settingsForm.pointsPerDollar || 1000} 
-                        onChange={e => setSettingsForm({...settingsForm, pointsPerDollar: Number(e.target.value)})}
+                        value={settingsForm.pointsPerDollar} 
+                        onChange={e => setSettingsForm({...settingsForm, pointsPerDollar: e.target.value === '' ? '' : Number(e.target.value)})}
                         className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white font-bold focus:border-red-500 transition-colors" 
                       />
                       <div className="text-xs text-neutral-500 italic mt-1">مثال: لو وضعت 10,000 فهذا يعني كل 10 آلاف نقطة = 1 دولار</div>
                    </div>
                 </div>
                 
-                <div className="pt-4 border-t border-neutral-800 flex justify-end">
+               <h3 className="text-xl font-bold text-white mb-4 italic flex items-center gap-2 mt-8 border-t border-neutral-800 pt-8"><Settings className="text-red-500"/> إعدادات المهام اليومية</h3>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                      <label className="text-neutral-400 text-sm font-bold block">مكافأة تسجيل الدخول اليومي</label>
+                      <input 
+                        type="number" 
+                        value={settingsForm.taskRewardLogin} 
+                        onChange={e => setSettingsForm({...settingsForm, taskRewardLogin: e.target.value === '' ? '' : Number(e.target.value)})}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white font-bold focus:border-red-500 transition-colors" 
+                      />
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                  <div className="space-y-2 border border-neutral-800 p-4 rounded-xl relative">
+                      <div className="absolute top-0 right-4 -translate-y-1/2 bg-neutral-900 px-2 text-sm font-bold text-red-400">مهمة الفيديوهات</div>
+                      <label className="text-neutral-400 text-sm font-bold block">العدد المطلوب</label>
+                      <input 
+                        type="number" 
+                        value={settingsForm.taskTargetVideos} 
+                        onChange={e => setSettingsForm({...settingsForm, taskTargetVideos: e.target.value === '' ? '' : Number(e.target.value)})}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white font-bold focus:border-red-500 transition-colors mb-3" 
+                      />
+                      <label className="text-neutral-400 text-sm font-bold block">المكافأة (نقاط)</label>
+                      <input 
+                        type="number" 
+                        value={settingsForm.taskRewardVideos} 
+                        onChange={e => setSettingsForm({...settingsForm, taskRewardVideos: e.target.value === '' ? '' : Number(e.target.value)})}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white font-bold focus:border-red-500 transition-colors" 
+                      />
+                  </div>
+                  
+                  <div className="space-y-2 border border-neutral-800 p-4 rounded-xl relative">
+                      <div className="absolute top-0 right-4 -translate-y-1/2 bg-neutral-900 px-2 text-sm font-bold text-blue-400">مهمة الألعاب</div>
+                      <label className="text-neutral-400 text-sm font-bold block">العدد المطلوب</label>
+                      <input 
+                        type="number" 
+                        value={settingsForm.taskTargetGames} 
+                        onChange={e => setSettingsForm({...settingsForm, taskTargetGames: e.target.value === '' ? '' : Number(e.target.value)})}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white font-bold focus:border-red-500 transition-colors mb-3" 
+                      />
+                      <label className="text-neutral-400 text-sm font-bold block">المكافأة (نقاط)</label>
+                      <input 
+                        type="number" 
+                        value={settingsForm.taskRewardGames} 
+                        onChange={e => setSettingsForm({...settingsForm, taskRewardGames: e.target.value === '' ? '' : Number(e.target.value)})}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white font-bold focus:border-red-500 transition-colors" 
+                      />
+                  </div>
+               </div>
+                
+                <div className="pt-4 border-t border-neutral-800 flex flex-col sm:flex-row gap-4 justify-between items-center mt-8">
                    <button type="submit" className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-black py-4 px-12 rounded-2xl shadow-xl shadow-red-600/10 transition-all transform active:scale-95">حفظ التغييرات</button>
                 </div>
              </form>

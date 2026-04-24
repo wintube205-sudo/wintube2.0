@@ -148,11 +148,13 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
             <button onClick={() => { setPlayingArcadeGame(null); setPointReady(false); }} className="p-2 bg-neutral-800 text-white rounded-xl flex items-center gap-1"><X size={18} /> إغلاق</button>
           </div>
           <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex flex-col items-center justify-center relative overflow-y-auto">
-             <AdBanner />
              <div className="w-full relative flex-grow min-h-[50vh] max-h-[80vh]">
                <iframe src={playingArcadeGame.url} allowFullScreen className="w-full h-full rounded-2xl bg-white relative z-0"></iframe>
              </div>
-             <AdBanner />
+             
+             <div className="w-full mt-8">
+                <AdBanner scriptSrc="https://pl29081721.profitablecpmratenetwork.com/af/01/2e/af012e0f5d549f7fbca9c56cc47808c8.js" />
+             </div>
              
              {pointReady && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">

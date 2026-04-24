@@ -1,31 +1,45 @@
 import React, { useEffect, useRef } from 'react';
 
-export const AdBanner = () => {
+interface AdBannerProps {
+  scriptSrc?: string;
+}
+
+export const AdBanner: React.FC<AdBannerProps> = ({ 
+  scriptSrc = 'https://pl29235932.profitablecpmratenetwork.com/95/8f/dd/958fddeaf0b4bc263a15d20890db89a6.js' 
+}) => {
   const adRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // We only want to inject the ad script once when the component mounts
-    if (adRef.current && !adRef.current.hasChildNodes()) {
-      const ins = document.createElement('ins');
-      ins.style.width = '0px';
-      ins.style.height = '0px';
-      ins.setAttribute('data-width', '0');
-      ins.setAttribute('data-height', '0');
-      ins.className = 'u51cfc85ccc';
-      ins.setAttribute('data-domain', '//data527.click');
-      ins.setAttribute('data-affquery', '/0c6dbe12baa19be1f02b/51cfc85ccc/?placementName=default');
-      
+    const container = adRef.current;
+    if (!container) return;
+
+    if (!container.hasChildNodes()) {
+      // Create and append the script
       const script = document.createElement('script');
-      script.src = '//data527.click/js/responsive.js';
+      script.src = scriptSrc;
       script.async = true;
       
-      ins.appendChild(script);
-      adRef.current.appendChild(ins);
+      script.onload = () => console.log('Ad script loaded successfully:', scriptSrc);
+      script.onerror = () => console.error('Failed to load ad script. It might be blocked by an AdBlocker:', scriptSrc);
+
+      container.appendChild(script);
     }
-  }, []);
+    
+    return () => {
+      // Optional cleanup if the component unmounts
+      if (container) {
+         container.innerHTML = '';
+      }
+    };
+  }, [scriptSrc]);
 
   return (
-    <div className="w-full flex justify-center items-center py-4 min-h-[60px]" ref={adRef}>
+    <div 
+      className="w-full flex justify-center items-center py-2 my-2 overflow-hidden" 
+      ref={adRef}
+      style={{ minHeight: '90px', background: 'transparent' }}
+    >
+      <span className="text-white/20 text-xs absolute z-[-1]">مساحة إعلانية</span>
     </div>
   );
 };

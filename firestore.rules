@@ -116,7 +116,7 @@ service cloud.firestore {
       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() &&
-         incoming().keys().hasAll(['userId', 'userName', 'method', 'amount', 'points', 'status', 'createdAt']) &&
+         incoming().keys().hasAll(['userId', 'userName', 'method', 'account', 'amount', 'points', 'status', 'createdAt']) &&
          incoming().userId == request.auth.uid &&
          incoming().status == 'pending' &&
          incoming().createdAt == request.time &&

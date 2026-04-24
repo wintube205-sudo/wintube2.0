@@ -1,7 +1,7 @@
 import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, runTransaction } from 'firebase/firestore';
 
-export async function submitWithdrawal(uid: string, userName: string, method: string, amount: number, points: number) {
+export async function submitWithdrawal(uid: string, userName: string, method: string, amount: number, points: number, account: string) {
   try {
     let success = false;
     let errorMsg = "";
@@ -21,6 +21,7 @@ export async function submitWithdrawal(uid: string, userName: string, method: st
         userId: uid,
         userName,
         method,
+        account,
         amount,
         points,
         status: 'pending',
@@ -84,7 +85,12 @@ export async function getGlobalSettings() {
             videoPoints: 10,
             gamePoints: 15,
             minWithdrawal: 10, // In Dollars
-            pointsPerDollar: 1000 // Conversion rate
+            pointsPerDollar: 1000, // Conversion rate
+            taskRewardLogin: 50,
+            taskTargetVideos: 5,
+            taskRewardVideos: 200,
+            taskTargetGames: 3,
+            taskRewardGames: 150
          };
          // We do not setDoc here automatically for regular users to avoid "Missing permissions"
          // AdminView will handle initialization/updates
@@ -97,7 +103,12 @@ export async function getGlobalSettings() {
           videoPoints: 10,
           gamePoints: 15,
           minWithdrawal: 10,
-          pointsPerDollar: 1000
+          pointsPerDollar: 1000,
+          taskRewardLogin: 50,
+          taskTargetVideos: 5,
+          taskRewardVideos: 200,
+          taskTargetGames: 3,
+          taskRewardGames: 150
       };
     }
 }

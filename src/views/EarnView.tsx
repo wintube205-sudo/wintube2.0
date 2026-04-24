@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Flame, Calendar, Play, Gamepad2, CheckCircle2, Loader2 } from 'lucide-react';
 import { getDailyTasks, claimDailyReward } from '../lib/firebase';
 
-export const EarnView = ({ points, setRefreshPoints, user, setActiveTab }: any) => {
+export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, settings }: any) => {
   const [toast, setToast] = useState<any>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -10,9 +10,20 @@ export const EarnView = ({ points, setRefreshPoints, user, setActiveTab }: any) 
   const [serverStats, setServerStats] = useState<any>(null);
 
   const tasksTemplate = {
-      login: { reward: 50, title: 'تسجيل الدخول اليومي', desc: 'احصل على مكافأتك مجاناً', icon: Calendar, color: 'text-green-500', bg: 'bg-green-500/20' },
-      videos: { target: 5, reward: 200, title: 'شاهد 5 فيديوهات', icon: Play, color: 'text-red-500', bg: 'bg-red-500/20', actionTab: 'videos' },
-      games: { target: 3, reward: 150, title: 'العب 3 مرات', icon: Gamepad2, color: 'text-blue-500', bg: 'bg-blue-500/20', actionTab: 'games' }
+      login: { 
+         reward: settings?.taskRewardLogin || 50, 
+         title: 'تسجيل الدخول اليومي', desc: 'احصل على مكافأتك مجاناً', icon: Calendar, color: 'text-green-500', bg: 'bg-green-500/20' 
+      },
+      videos: { 
+         target: settings?.taskTargetVideos || 5, 
+         reward: settings?.taskRewardVideos || 200, 
+         title: `شاهد ${settings?.taskTargetVideos || 5} فيديوهات`, icon: Play, color: 'text-red-500', bg: 'bg-red-500/20', actionTab: 'videos' 
+      },
+      games: { 
+         target: settings?.taskTargetGames || 3, 
+         reward: settings?.taskRewardGames || 150, 
+         title: `العب ${settings?.taskTargetGames || 3} مرات`, icon: Gamepad2, color: 'text-blue-500', bg: 'bg-blue-500/20', actionTab: 'games' 
+      }
   };
 
   useEffect(() => {

@@ -20,7 +20,7 @@ export const RewardsView = ({ points, user, setRefreshPoints, settings }: any) =
     
     setLoading(true);
     const amount = points / pointsPerDollar; 
-    const res = await submitWithdrawal(user.id, user.name || 'مستخدم', method, amount, points);
+    const res = await submitWithdrawal(user.id, user.name || 'مستخدم', method, amount, points, account);
     
     if (res.success) {
       showToast('تم تقديم طلب السحب بنجاح!');
