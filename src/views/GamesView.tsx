@@ -93,7 +93,7 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <h2 className="text-2xl font-black text-white flex items-center gap-2"><Gamepad2 className="text-blue-500" /> قسم الألعاب</h2>
         <div className="flex bg-neutral-900 rounded-xl p-1 border border-neutral-800">
-          <button onClick={() => setActiveGameCategory('betting')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeGameCategory === 'betting' ? 'bg-neutral-800 text-white' : 'text-neutral-400'}`}>ألعاب الرهان</button>
+          <button onClick={() => setActiveGameCategory('betting')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeGameCategory === 'betting' ? 'bg-neutral-800 text-white' : 'text-neutral-400'}`}>ألعاب الحظ</button>
           <button onClick={() => setActiveGameCategory('arcade')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeGameCategory === 'arcade' ? 'bg-neutral-800 text-white' : 'text-neutral-400'}`}>ألعاب تسلية</button>
         </div>
       </div>

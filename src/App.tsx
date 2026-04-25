@@ -13,7 +13,7 @@ import { AdminView } from './views/AdminView';
 import { LegalView } from './views/LegalView';
 
 import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail, db } from './lib/firebase';
-import { onAuthStateChanged, updateProfile } from 'firebase/auth';
+import { onAuthStateChanged, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
 import { collection, query, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { User, X, Loader2, Bell } from 'lucide-react';
 import { getGlobalSettings } from './services/api';
@@ -53,11 +53,14 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [successMsg, setSuccessMsg] = useState('');
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
     setLoading(true);
     try {
       if (isLogin) {
@@ -72,7 +75,15 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
       else if (msg.includes('auth/email-already-in-use')) msg = 'البريد الإلكتروني مستخدم بالفعل لحساب آخر';
       else if (msg.includes('auth/weak-password')) msg = 'كلمة المرور ضعيفة جداً (يجب أن تكون 6 أحرف على الأقل)';
       else if (msg.includes('auth/invalid-email')) msg = 'صيغة البريد الإلكتروني غير صالحة';
-      setError(msg);
+
+      if (msg.includes('تم إنشاء حسابك بنجاح!')) {
+         setSuccessMsg(msg);
+         setIsLogin(true); // Switch back to login view after success
+         setEmail('');
+         setPassword('');
+      } else {
+         setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -88,6 +99,7 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
         </div>
 
         {error && <div className="bg-red-500/10 text-red-500 p-3 rounded-xl text-sm font-bold mb-4 text-center">{error}</div>}
+        {successMsg && <div className="bg-green-500/10 text-green-500 p-3 rounded-xl text-sm font-bold mb-4 text-center">{successMsg}</div>}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-6">
           {!isLogin && (
@@ -112,7 +124,7 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
 
         <div className="mt-6 text-center text-sm">
           <span className="text-neutral-400">{isLogin ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟'}</span>
-          <button onClick={() => { setIsLogin(!isLogin); setError(''); }} className="text-blue-500 font-bold mr-2 hover:underline">
+          <button onClick={() => { setIsLogin(!isLogin); setError(''); setSuccessMsg(''); }} className="text-blue-500 font-bold mr-2 hover:underline">
             {isLogin ? 'إنشاء حساب' : 'تسجيل الدخول'}
           </button>
         </div>
@@ -204,6 +216,10 @@ const App = () => {
   const handleEmailLogin = async (e: string, p: string) => {
     const fbUser = await signInWithEmail(e, p);
     if (fbUser) {
+        if (!fbUser.emailVerified) {
+          await signOut(auth);
+          throw new Error('الرجاء تأكيد بريدك الإلكتروني أولاً عبر الرابط المرسل إليك لتفعيل حسابك (تفقد صندوق الوارد أو البريد المزعج).');
+        }
         let uData: any = await getUserData(fbUser.uid);
         if (!uData) {
           uData = await createUserDocument(fbUser);
@@ -219,14 +235,13 @@ const App = () => {
     const fbUser = await signUpWithEmail(e, p);
     if (fbUser) {
         await updateProfile(fbUser, { displayName: name });
-        let uData: any = await getUserData(fbUser.uid);
-        if (!uData) {
-          uData = await createUserDocument(fbUser);
+        try {
+          await sendEmailVerification(fbUser);
+        } catch (e) {
+          console.error("Verification email failed", e);
         }
-        setUser(uData);
-        setPoints(uData.points || 0);
-        setIsAuthOpen(false);
-        if (uData.role === 'admin') setActiveTab('admin');
+        await signOut(auth);
+        throw new Error('تم إنشاء حسابك بنجاح! الرجاء الانتقال إلى بريدك الإلكتروني والضغط على رابط التفعيل قبل تسجيل الدخول.');
     }
   };
 
