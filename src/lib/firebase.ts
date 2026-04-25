@@ -54,11 +54,24 @@ export async function getUserData(uid: string) {
 
 export async function createUserDocument(user: any) {
   const userRef = doc(db, 'users', user.uid);
+  const snap = await getDoc(userRef);
+  
+  if (snap.exists()) {
+    if (user.displayName && snap.data().name !== user.displayName && snap.data().name === 'مستخدم') {
+      try {
+        await updateDoc(userRef, { name: user.displayName });
+      } catch (e) {
+        console.error("Could not update name", e);
+      }
+    }
+    return { id: snap.id, ...snap.data() };
+  }
+
   const refCode = localStorage.getItem('referralCode');
 
   const newUser = {
     name: user.displayName || 'مستخدم',
-    email: user.email,
+    email: user.email || 'user@example.com',
     role: 'user', // default role
     points: 0,
     banned: false,
@@ -69,13 +82,19 @@ export async function createUserDocument(user: any) {
     streak: 0, // Daily login streak
     createdAt: serverTimestamp(),
   };
-  await setDoc(userRef, newUser);
+
+  try {
+    await setDoc(userRef, newUser);
+  } catch (err: any) {
+    console.error("Error writing user doc", err);
+    throw new Error(`Error writing user doc: ${err.message}`);
+  }
 
   if (refCode && refCode !== user.uid) {
     try {
       await processReferralReward(refCode);
       localStorage.removeItem('referralCode');
-    } catch(e) {
+    } catch(e: any) {
       console.error("Referral Error", e);
     }
   }

@@ -51,7 +51,7 @@ service cloud.firestore {
         (
            request.auth.uid == userId &&
            isValidUserUpdate(incoming()) &&
-           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'lastVideoClaim', 'lastGameClaim', 'referralCount', 'referralsEarnings', 'level', 'streak', 'lastLoginClaim', 'lastLoginClaim']) &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'lastVideoClaim', 'lastGameClaim', 'referralCount', 'referralsEarnings', 'level', 'streak', 'lastLoginClaim', 'name']) &&
            incoming().role == existing().role &&
            incoming().banned == existing().banned
         ) ||
