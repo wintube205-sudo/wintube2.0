@@ -67,7 +67,12 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
         await onEmailRegister(email, password, name);
       }
     } catch (err: any) {
-      setError(err.message || 'حدث خطأ');
+      let msg = err.message || 'حدث خطأ';
+      if (msg.includes('auth/invalid-credential') || msg.includes('auth/user-not-found') || msg.includes('auth/wrong-password')) msg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+      else if (msg.includes('auth/email-already-in-use')) msg = 'البريد الإلكتروني مستخدم بالفعل لحساب آخر';
+      else if (msg.includes('auth/weak-password')) msg = 'كلمة المرور ضعيفة جداً (يجب أن تكون 6 أحرف على الأقل)';
+      else if (msg.includes('auth/invalid-email')) msg = 'صيغة البريد الإلكتروني غير صالحة';
+      setError(msg);
     } finally {
       setLoading(false);
     }
