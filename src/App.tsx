@@ -45,14 +45,14 @@ const NotificationsModal = ({ isOpen, onClose, notifications, markAsRead }: any)
   );
 }
 
-const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegister }: any) => {
+const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegister, onResendVerification }: any) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
-
   const [successMsg, setSuccessMsg] = useState('');
 
   if (!isOpen) return null;
@@ -89,6 +89,24 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
     }
   };
 
+  const handleResend = async () => {
+    if (!email || !password) {
+      setError('يرجى إدخال البريد الإلكتروني وكلمة المرور أولاً لإعادة إرسال الرابط.');
+      return;
+    }
+    setResendLoading(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      await onResendVerification(email, password);
+      setSuccessMsg('تم إعادة إرسال رابط التفعيل بنجاح! تفقد بريدك الإلكتروني.');
+    } catch (err: any) {
+      setError(err.message || 'فشل إعادة إرسال الرابط');
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" dir="rtl">
       <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md p-6 relative">
@@ -98,7 +116,20 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
            <h2 className="text-2xl font-black text-white">{isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}</h2>
         </div>
 
-        {error && <div className="bg-red-500/10 text-red-500 p-3 rounded-xl text-sm font-bold mb-4 text-center">{error}</div>}
+        {error && (
+          <div className="bg-red-500/10 text-red-500 p-3 rounded-xl text-sm font-bold mb-4 text-center">
+            {error}
+            {error.includes('تأكيد بريدك') && (
+              <button 
+                onClick={handleResend} 
+                disabled={resendLoading}
+                className="block mx-auto mt-2 text-blue-400 hover:underline disabled:opacity-50"
+              >
+                {resendLoading ? 'جاري الإرسال...' : 'إعادة إرسال رابط التفعيل؟'}
+              </button>
+            )}
+          </div>
+        )}
         {successMsg && <div className="bg-green-500/10 text-green-500 p-3 rounded-xl text-sm font-bold mb-4 text-center">{successMsg}</div>}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-6">
@@ -245,6 +276,17 @@ const App = () => {
     }
   };
 
+  const handleResendVerification = async (e: string, p: string) => {
+    const fbUser = await signInWithEmail(e, p);
+    if (fbUser) {
+      if (fbUser.emailVerified) {
+        throw new Error('حسابك مفعل بالفعل، لا حاجة لإعادة الإرسال.');
+      }
+      await sendEmailVerification(fbUser);
+      await signOut(auth);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans selection:bg-red-500/30">
       <Header 
@@ -290,6 +332,7 @@ const App = () => {
         onGoogleLogin={handleGoogleLogin} 
         onEmailLogin={handleEmailLogin}
         onEmailRegister={handleEmailRegister}
+        onResendVerification={handleResendVerification}
       />
       <NotificationsModal 
         isOpen={isNotifOpen} 
