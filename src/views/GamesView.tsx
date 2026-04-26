@@ -150,17 +150,16 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
           <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex flex-col items-center justify-center relative overflow-y-auto">
              <div className="w-full relative flex-grow min-h-[50vh] max-h-[80vh]">
                <iframe src={playingArcadeGame.url} allowFullScreen className="w-full h-full rounded-2xl bg-white relative z-0"></iframe>
+               {pointReady && (
+                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
+                    <button onClick={requestGamePointFromServer} disabled={isClaiming} className="pointer-events-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-black py-2 px-6 rounded-full shadow-2xl border-2 border-white/20 whitespace-nowrap animate-bounce">استلم النقطة وتابع اللعب ✨</button>
+                  </div>
+               )}
              </div>
              
              <div className="w-full mt-8">
                 <AdBanner scriptSrc="https://pl29081721.profitablecpmratenetwork.com/af/01/2e/af012e0f5d549f7fbca9c56cc47808c8.js" />
              </div>
-             
-             {pointReady && (
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
-                  <button onClick={requestGamePointFromServer} disabled={isClaiming} className="pointer-events-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-black py-4 px-10 rounded-full animate-bounce shadow-2xl scale-125 border-4 border-white/20">استلم النقطة وتابع اللعب ✨</button>
-                </div>
-             )}
           </div>
         </div>
       )}
