@@ -143,16 +143,49 @@ export async function updatePoints(uid: string, pointsDelta: number, reason: str
     const userRef = doc(db, 'users', uid);
     
     let newTotal = 0;
+    let referrerId: string | null = null;
+    let commission = 0;
+
     await runTransaction(db, async (transaction) => {
+      // 1. All Reads
       const userDoc = await transaction.get(userRef);
       if (!userDoc.exists()) throw new Error("User does not exist!");
-      const currentPoints = userDoc.data()?.points || 0;
+      const userData = userDoc.data();
+      
+      let referrerDoc = null;
+      if (type === 'earn' && pointsDelta > 0 && userData?.referredBy) {
+        referrerId = userData.referredBy;
+        const referrerRef = doc(db, 'users', referrerId);
+        referrerDoc = await transaction.get(referrerRef);
+      }
+
+      // 2. All Writes
+      const currentPoints = userData?.points || 0;
       newTotal = currentPoints + pointsDelta;
       if (newTotal < 0) throw new Error("Insufficient points");
       transaction.update(userRef, { points: newTotal });
+
+      if (referrerDoc && referrerDoc.exists() && referrerId) {
+        commission = Math.max(1, Math.floor(pointsDelta * 0.2)); // At least 1 point if earning
+        if (commission > 0) {
+          const refData = referrerDoc.data();
+          const referrerRef = doc(db, 'users', referrerId);
+          transaction.update(referrerRef, {
+            points: (refData.points || 0) + commission,
+            referralsEarnings: (refData.referralsEarnings || 0) + commission
+          });
+        }
+      } else {
+        referrerId = null; // Prevent logging if referrer missing
+      }
     });
     
     await logHistory(uid, reason, pointsDelta, type);
+
+    if (referrerId && commission > 0) {
+       await logHistory(referrerId, `أرباح إحالة 20% (من نشاط صديق)`, commission, 'earn');
+    }
+
     return { success: true, newPoints: newTotal, error: null };
   } catch(e: any) {
     return { success: false, newPoints: 0, error: e.message };
