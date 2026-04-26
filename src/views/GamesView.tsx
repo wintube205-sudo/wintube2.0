@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Gamepad2, X } from 'lucide-react';
 import { updatePoints, incrementDailyProgress } from '../lib/firebase';
 import { collection, getDocs, query, limit } from 'firebase/firestore';
@@ -17,8 +17,10 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
   const [pointReady, setPointReady] = useState(false);
   const [arcadeGames, setArcadeGames] = useState<any[]>([]);
 
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   useEffect(() => {
-     getDocs(query(collection(db, 'games'), limit(20))).then(snap => {
+    getDocs(query(collection(db, 'games'), limit(20))).then(snap => {
          setArcadeGames(snap.docs.map(d => ({ id: d.id, ...d.data() })));
      });
   }, []);
@@ -49,7 +51,15 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
         if (!document.hidden) {
           setTimeLeft(prev => {
              if (prev <= 1) { 
-               if (!user) { setToast('يرجى تسجيل الدخول'); setPlayingArcadeGame(null); setPointReady(false); return 0; } 
+               if (!user) { 
+                 setToast('يرجى تسجيل الدخول'); 
+                 if (iframeRef.current) iframeRef.current.src = '';
+                 setTimeout(() => {
+                   setPlayingArcadeGame(null); 
+                   setPointReady(false);
+                 }, 50);
+                 return 0; 
+               } 
                setPointReady(true); return 0; 
              }
              return prev - 1;
@@ -87,6 +97,16 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
 
     } catch (err) { setResult({ msg: 'خطأ', color: 'text-red-500' }); } finally { setIsRolling(false); }
   };
+
+  const closeGame = useCallback(() => {
+    if (iframeRef.current) {
+      iframeRef.current.src = '';
+    }
+    setTimeout(() => {
+      setPlayingArcadeGame(null); 
+      setPointReady(false);
+    }, 50);
+  }, []);
 
   return (
     <div className="max-w-6xl mx-auto animate-in fade-in w-full" dir="rtl">
@@ -145,11 +165,11 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
          <div className="fixed inset-0 bg-black/95 z-50 flex flex-col animate-in zoom-in-95">
           <div className="p-4 border-b border-neutral-800 flex justify-between bg-neutral-950">
             <div className="flex items-center gap-4 text-white font-bold"><Gamepad2 className="text-blue-500" size={20} /> {playingArcadeGame.title}</div>
-            <button onClick={() => { setPlayingArcadeGame(null); setPointReady(false); }} className="p-2 bg-neutral-800 text-white rounded-xl flex items-center gap-1"><X size={18} /> إغلاق</button>
+            <button onClick={closeGame} className="p-2 bg-neutral-800 text-white rounded-xl flex items-center gap-1"><X size={18} /> إغلاق</button>
           </div>
           <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex flex-col items-center justify-center relative overflow-y-auto">
              <div className="w-full relative flex-grow min-h-[50vh] max-h-[80vh]">
-               <iframe src={playingArcadeGame.url} allowFullScreen className="w-full h-full rounded-2xl bg-white relative z-0"></iframe>
+               <iframe ref={iframeRef} src={playingArcadeGame.url} allowFullScreen className="w-full h-full rounded-2xl bg-white relative z-0"></iframe>
                {pointReady && (
                   <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
                     <button onClick={requestGamePointFromServer} disabled={isClaiming} className="pointer-events-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-black py-2 px-6 rounded-full shadow-2xl border-2 border-white/20 whitespace-nowrap animate-bounce">استلم النقطة وتابع اللعب ✨</button>
