@@ -5,6 +5,7 @@ import { collection, getDocs, query, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { AdBanner } from '../components/AdBanner';
 import { NativeAdBanner } from '../components/NativeAdBanner';
+import { WheelOfFortune } from '../components/WheelOfFortune';
 
 export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => {
   const [bet, setBet] = useState(10);
@@ -86,7 +87,7 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
       }
       setRefreshPoints((prev: number) => prev + 1);
       
-      const isWin = Math.random() < 0.45;
+      const isWin = Math.random() < 0.30;
       if (isWin) {
          const winAmt = bet * 2;
          await updatePoints(user.id, winAmt, 'فوز في لعبة رمي العملة', 'earn');
@@ -120,14 +121,23 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
       </div>
 
       {activeGameCategory === 'betting' ? (
-        <div className="max-w-2xl mx-auto bg-neutral-900 border border-neutral-800 rounded-3xl p-6 text-center">
-          <h3 className="text-xl font-bold text-amber-400 mb-2">رمي العملة</h3>
-          <div className="mb-6"><input type="number" value={bet} onChange={(e) => setBet(Number(e.target.value))} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white text-center font-bold outline-none" min="10" disabled={isRolling} /></div>
-          <div className="flex gap-4">
-            <button disabled={isRolling} onClick={() => playCoinFlip('heads')} className="flex-1 bg-neutral-800 text-white font-bold py-4 rounded-xl disabled:opacity-50">{isRolling ? '...' : 'طرة (Heads)'}</button>
-            <button disabled={isRolling} onClick={() => playCoinFlip('tails')} className="flex-1 bg-neutral-800 text-white font-bold py-4 rounded-xl disabled:opacity-50">{isRolling ? '...' : 'نقش (Tails)'}</button>
+        <div className="flex flex-col gap-8 items-center max-w-4xl mx-auto">
+          <div className="w-full justify-center flex">
+            <WheelOfFortune user={user} points={points} setRefreshPoints={setRefreshPoints} />
           </div>
-          {result && <div className={`mt-6 text-xl font-black ${result.color}`}>{result.msg}</div>}
+          <div className="w-full bg-neutral-900 border border-neutral-800 rounded-3xl p-6 text-center max-w-sm mx-auto">
+            <h3 className="text-xl font-bold text-amber-400 mb-2">رمي العملة</h3>
+            <div className="mb-6 flex items-center bg-neutral-950 border border-neutral-800 rounded-xl overflow-hidden p-1">
+              <span className="px-3 text-neutral-400 font-bold">رهان:</span>
+              <input type="number" value={bet} onChange={(e) => setBet(Number(e.target.value))} className="w-full bg-transparent p-2 text-white text-center font-bold outline-none" min="10" disabled={isRolling} />
+              <span className="px-3 text-amber-500 font-bold">نقطة</span>
+            </div>
+            <div className="flex gap-4">
+              <button disabled={isRolling} onClick={() => playCoinFlip('heads')} className="flex-1 bg-neutral-800 hover:bg-neutral-700 transition-colors text-white font-bold py-4 rounded-xl disabled:opacity-50">{isRolling ? '...' : 'طرة (Heads)'}</button>
+              <button disabled={isRolling} onClick={() => playCoinFlip('tails')} className="flex-1 bg-neutral-800 hover:bg-neutral-700 transition-colors text-white font-bold py-4 rounded-xl disabled:opacity-50">{isRolling ? '...' : 'نقش (Tails)'}</button>
+            </div>
+            {result && <div className={`mt-6 text-xl font-black shrink-0 ${result.color} animate-in slide-in-from-bottom flex justify-center items-center p-3 bg-black/20 rounded-xl`}>{result.msg}</div>}
+          </div>
         </div>
       ) : (
         <>
