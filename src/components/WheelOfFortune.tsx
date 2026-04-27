@@ -20,6 +20,7 @@ export const WheelOfFortune = ({ user, points, setRefreshPoints }: any) => {
   ];
 
   const spinWheel = async () => {
+    if (isSpinning) return;
     if (!user) return alert('سجل دخولك أولاً');
     if (bet < 10) return alert('الحد الأدنى للرهان هو 10 نقاط');
     if (points < bet) return alert('رصيد غير كافٍ');
@@ -50,10 +51,16 @@ export const WheelOfFortune = ({ user, points, setRefreshPoints }: any) => {
 
       const segment = segments[winningIndex];
 
-      // Calculate new rotation
+      // Calculate new rotation correctly
       const sliceAngle = 360 / segments.length;
-      // Current rotation + minimum 5 spins (1800 deg) + offset to winning slice
-      const targetRotation = rotation + 1800 + (360 - (winningIndex * sliceAngle)) - (sliceAngle / 2);
+      const currentAngle = rotation % 360;
+      const targetOffset = 360 - (winningIndex * sliceAngle) - (sliceAngle / 2);
+      
+      let targetRotation = rotation - currentAngle + 1800 + targetOffset;
+      // Ensure at least 5 full spins
+      if (targetRotation < rotation + 1800) {
+        targetRotation += 360;
+      }
       
       setRotation(targetRotation);
 
