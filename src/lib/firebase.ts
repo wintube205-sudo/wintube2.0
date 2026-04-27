@@ -49,7 +49,14 @@ export async function getUserData(uid: string) {
     // New user
     return null;
   }
-  return { id: snap.id, ...snap.data() };
+  const data = snap.data();
+  if (data.isVIP && data.vipExpiration) {
+    const exp = data.vipExpiration.toDate ? data.vipExpiration.toDate() : new Date(data.vipExpiration);
+    if (exp <= new Date()) {
+      data.isVIP = false;
+    }
+  }
+  return { id: snap.id, ...data };
 }
 
 export async function createUserDocument(user: any) {
@@ -79,7 +86,10 @@ export async function createUserDocument(user: any) {
     referralsEarnings: 0,
     referredBy: refCode || null,
     level: 1, // Start at level 1 (Bronze)
+    xp: 0, // Experience Points
     streak: 0, // Daily login streak
+    isVIP: false,
+    vipExpiration: null,
     createdAt: serverTimestamp(),
   };
 
@@ -163,7 +173,63 @@ export async function updatePoints(uid: string, pointsDelta: number, reason: str
       const currentPoints = userData?.points || 0;
       newTotal = currentPoints + pointsDelta;
       if (newTotal < 0) throw new Error("Insufficient points");
-      transaction.update(userRef, { points: newTotal });
+      
+      const updateData: any = { points: newTotal };
+      
+      // XP & Leveling logic for earning activities
+      if (type === 'earn' && pointsDelta > 0) {
+         let currentXp = userData?.xp || 0;
+         let currentLevel = userData?.level || 1;
+         let isVIP = false;
+         
+         if (userData?.isVIP && userData?.vipExpiration) {
+            const exp = userData.vipExpiration.toDate ? userData.vipExpiration.toDate() : new Date(userData.vipExpiration);
+            if (exp > new Date()) {
+                isVIP = true;
+            }
+         }
+         
+         // Apply level bonus multipliers
+         let finalPointsDelta = pointsDelta;
+         let bonusPoints = 0;
+         if (currentLevel >= 4) {
+           bonusPoints = Math.floor(pointsDelta * 0.10); // 10% bonus
+         } else if (currentLevel >= 2) {
+           bonusPoints = Math.floor(pointsDelta * 0.05); // 5% bonus
+         }
+         
+         finalPointsDelta += bonusPoints;
+         
+         if (isVIP) {
+            finalPointsDelta = Math.floor(finalPointsDelta * 2); // Double VIP points
+         }
+         
+         pointsDelta = finalPointsDelta; // Update pointsDelta so logging matches
+         newTotal = currentPoints + finalPointsDelta;
+         updateData.points = newTotal; // Update the dictionary with newTotal
+         
+         // Give 1 XP per point earned (before bonus, or after? let's do after to be nice)
+         let newXp = currentXp + finalPointsDelta;
+         
+         // Calculate new level
+         // Formula: XP needed for next level = currentLevel * 500 + currentLevel^2 * 50
+         let threshold = currentLevel * 500 + Math.pow(currentLevel, 2) * 50;
+         let leveledUp = false;
+         
+         while (newXp >= threshold) {
+            currentLevel++;
+            leveledUp = true;
+            threshold = currentLevel * 500 + Math.pow(currentLevel, 2) * 50;
+         }
+         
+         updateData.xp = newXp;
+         if (leveledUp) {
+            updateData.level = currentLevel;
+            // Optionally log level up event
+         }
+      }
+
+      transaction.update(userRef, updateData);
 
       if (referrerDoc && referrerDoc.exists() && referrerId) {
         commission = Math.max(1, Math.floor(pointsDelta * 0.2)); // At least 1 point if earning
@@ -212,6 +278,52 @@ export async function getDailyTasks(uid: string) {
     return initialData;
   }
   return statSnap.data();
+}
+
+export async function buyVip(uid: string, days: number, cost: number) {
+  try {
+    const userRef = doc(db, 'users', uid);
+    
+    await runTransaction(db, async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      if (!userDoc.exists()) throw new Error("User not found");
+      const userData = userDoc.data();
+      
+      if ((userData.points || 0) < cost) {
+        throw new Error("رصيد غير كافٍ");
+      }
+      
+      let exp: Date;
+      if (userData.isVIP && userData.vipExpiration) {
+          const currentExp = userData.vipExpiration.toDate ? userData.vipExpiration.toDate() : new Date(userData.vipExpiration);
+          if (currentExp > new Date()) {
+             exp = new Date(currentExp.getTime() + days * 24 * 60 * 60 * 1000);
+          } else {
+             exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+          }
+      } else {
+          exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      }
+      
+      transaction.update(userRef, {
+         points: userData.points - cost,
+         isVIP: true,
+         vipExpiration: exp
+      });
+      
+      // Add transaction history
+      const historyRef = doc(collection(db, 'users', uid, 'history'));
+      transaction.set(historyRef, {
+        points: -cost,
+        reason: `اشتراك VIP لمدة ${days} أيام`,
+        type: 'spend',
+        createdAt: serverTimestamp()
+      });
+    });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 }
 
 export async function incrementDailyProgress(uid: string, type: 'video' | 'game') {

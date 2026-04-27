@@ -103,9 +103,11 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
         </button>
       </form>
 
-      <div className="w-full flex justify-center mb-6">
-        <NativeAdBanner />
-      </div>
+      {!user?.isVIP && (
+        <div className="w-full flex justify-center mb-6">
+          <NativeAdBanner />
+        </div>
+      )}
 
       {loading ? ( <div className="flex justify-center py-20 text-neutral-500"><Loader2 className="animate-spin w-10 h-10 text-red-500" /></div> ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

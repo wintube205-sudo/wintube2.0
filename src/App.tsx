@@ -226,7 +226,10 @@ const App = () => {
   useEffect(() => {
     if (user?.id) {
        getUserData(user.id).then((uData: any) => {
-           if (uData) setPoints(uData.points || 0);
+           if (uData) {
+              setPoints(uData.points || 0);
+              setUser(uData);
+           }
        });
     }
   }, [refreshPoints]);
@@ -305,7 +308,7 @@ const App = () => {
 
       <main className="md:pr-64 pt-20 pb-40 md:pb-24 min-h-screen flex flex-col px-4 md:px-8">
         <div className="w-full flex justify-center mb-4">
-           <AdBanner scriptSrc="https://pl29081721.profitablecpmratenetwork.com/af/01/2e/af012e0f5d549f7fbca9c56cc47808c8.js" />
+          {!user?.isVIP && <AdBanner scriptSrc="https://pl29081721.profitablecpmratenetwork.com/af/01/2e/af012e0f5d549f7fbca9c56cc47808c8.js" />}
         </div>
         {activeTab === 'home' && <HomeView setActiveTab={setActiveTab} />}
         {activeTab === 'videos' && <VideosView setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
@@ -315,7 +318,7 @@ const App = () => {
         {activeTab === 'referrals' && <ReferralsView user={user} />}
         {activeTab === 'leaderboard' && <LeaderboardView user={user} points={points} />}
         {activeTab === 'rewards' && <RewardsView points={points} setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
-        {activeTab === 'profile' && <ProfileView points={points} user={user} />}
+        {activeTab === 'profile' && <ProfileView points={points} user={user} setRefreshPoints={setRefreshPoints} />}
         {activeTab === 'admin' && <AdminView user={user} onSettingsUpdated={setSettings} />}
         
         {activeTab === 'terms' && <LegalView type="terms" />}
@@ -332,7 +335,7 @@ const App = () => {
 
       <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-30 flex justify-center bg-transparent pointer-events-none pb-2">
         <div className="pointer-events-auto">
-          <AdBanner scriptSrc="https://pl29235932.profitablecpmratenetwork.com/95/8f/dd/958fddeaf0b4bc263a15d20890db89a6.js" />
+          {!user?.isVIP && <AdBanner scriptSrc="https://pl29235932.profitablecpmratenetwork.com/95/8f/dd/958fddeaf0b4bc263a15d20890db89a6.js" />}
         </div>
       </div>
 
