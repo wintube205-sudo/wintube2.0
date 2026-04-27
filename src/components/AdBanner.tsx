@@ -20,7 +20,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
       script.async = true;
       
       script.onload = () => console.log('Ad script loaded successfully:', scriptSrc);
-      script.onerror = () => console.error('Failed to load ad script. It might be blocked by an AdBlocker:', scriptSrc);
+      script.onerror = () => console.log('Ad script was blocked or failed to load (usually by an AdBlocker).');
 
       container.appendChild(script);
     }

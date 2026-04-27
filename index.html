@@ -25,9 +25,13 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script type="text/javascript">
-        aclib.runAutoTag({
-            zoneId: 'rje1qkto0e',
-        });
+        if (typeof aclib !== 'undefined' && typeof aclib.runAutoTag === 'function') {
+            aclib.runAutoTag({
+                zoneId: 'rje1qkto0e',
+            });
+        } else {
+            console.log('aclib was blocked by adblocker');
+        }
     </script>
   </body>
 </html>

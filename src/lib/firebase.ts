@@ -280,6 +280,86 @@ export async function getDailyTasks(uid: string) {
   return statSnap.data();
 }
 
+export async function claimLongtermReward(uid: string, kind: 'weeklyVideos' | 'weeklyGames' | 'monthlyVideos' | 'monthlyGames' | 'lifetime100Videos' | 'lifetime100Games', target: number, baseReward: number, title: string) {
+  try {
+    const userRef = doc(db, 'users', uid);
+    let newTotal = 0;
+    let earnedPoints = 0;
+    
+    await runTransaction(db, async (t) => {
+      const userSnap = await t.get(userRef);
+      if (!userSnap.exists()) throw new Error("User not found");
+      const userData = userSnap.data();
+      
+      let reward = baseReward;
+      let level = userData.level || 1;
+      
+      // Calculate VIP / Level bonuses
+       let isVIP = false;
+       if (userData.isVIP && userData.vipExpiration) {
+          const exp = userData.vipExpiration.toDate ? userData.vipExpiration.toDate() : new Date(userData.vipExpiration);
+          if (exp > new Date()) {
+              isVIP = true;
+          }
+       }
+       
+       let bonusPoints = 0;
+       if (level >= 4) {
+         bonusPoints = Math.floor(baseReward * 0.10);
+       } else if (level >= 2) {
+         bonusPoints = Math.floor(baseReward * 0.05);
+       }
+       
+       reward += bonusPoints;
+       if (isVIP) reward = Math.floor(reward * 2);
+       
+       earnedPoints = reward;
+       newTotal = (userData.points || 0) + reward;
+
+       const updates: any = {
+           points: newTotal,
+           xp: (userData.xp || 0) + reward
+       };
+
+      // Condition logic
+      if (kind === 'weeklyVideos') {
+         if ((userData.weeklyVideosWatched || 0) < target || userData.weeklyClaimedVideos) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
+         updates.weeklyClaimedVideos = true;
+      } else if (kind === 'weeklyGames') {
+         if ((userData.weeklyGamesPlayed || 0) < target || userData.weeklyClaimedGames) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
+         updates.weeklyClaimedGames = true;
+      } else if (kind === 'monthlyVideos') {
+         if ((userData.monthlyVideosWatched || 0) < target || userData.monthlyClaimedVideos) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
+         updates.monthlyClaimedVideos = true;
+      } else if (kind === 'monthlyGames') {
+         if ((userData.monthlyGamesPlayed || 0) < target || userData.monthlyClaimedGames) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
+         updates.monthlyClaimedGames = true;
+      } else if (kind === 'lifetime100Videos') {
+         if ((userData.totalVideosWatched || 0) < target || userData.lifetimeClaimed100Videos) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
+         updates.lifetimeClaimed100Videos = true;
+      } else if (kind === 'lifetime100Games') {
+         if ((userData.totalGamesPlayed || 0) < target || userData.lifetimeClaimed100Games) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
+         updates.lifetimeClaimed100Games = true;
+      }
+
+      // Check level upgrades
+      let currentLevel = level;
+      let threshold = currentLevel * 500 + Math.pow(currentLevel, 2) * 50;
+      while (updates.xp >= threshold) {
+         currentLevel++;
+         threshold = currentLevel * 500 + Math.pow(currentLevel, 2) * 50;
+      }
+      updates.level = currentLevel;
+
+      t.update(userRef, updates);
+    });
+
+    await logHistory(uid, title, earnedPoints, 'earn');
+    return { success: true, newPoints: newTotal, error: null };
+  } catch(e: any) {
+    return { success: false, newPoints: 0, error: e.message };
+  }
+}
 export async function buyVip(uid: string, days: number, cost: number) {
   try {
     const userRef = doc(db, 'users', uid);
@@ -329,7 +409,28 @@ export async function buyVip(uid: string, days: number, cost: number) {
 export async function incrementDailyProgress(uid: string, type: 'video' | 'game') {
   try {
     const today = new Date().toISOString().split('T')[0];
+    
+    // YYYY-Www for weekly, YYYY-MM for monthly
+    const currentDate = new Date();
+    
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const monthKey = `${year}-${month}`;
+    
+    // Calculate ISO week
+    const target = new Date(currentDate.valueOf());
+    const dayNr = (currentDate.getDay() + 6) % 7;
+    target.setDate(target.getDate() - dayNr + 3);
+    const firstThursday = target.valueOf();
+    target.setMonth(0, 1);
+    if (target.getDay() !== 4) {
+      target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+    }
+    const weekNumber = 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
+    const weekKey = `${year}-W${String(weekNumber).padStart(2, '0')}`;
+
     const statRef = doc(db, 'users', uid, 'daily_stats', today);
+    const userRef = doc(db, 'users', uid);
     
     await runTransaction(db, async (t) => {
       const statSnap = await t.get(statRef);
@@ -348,6 +449,43 @@ export async function incrementDailyProgress(uid: string, type: 'video' | 'game'
         if (type === 'video') updates.videosWatched = (data.videosWatched || 0) + 1;
         if (type === 'game') updates.gamesPlayed = (data.gamesPlayed || 0) + 1;
         t.update(statRef, updates);
+      }
+
+      // Also increment weekly, monthly, and lifetime stats directly on user doc
+      const userSnap = await t.get(userRef);
+      if (userSnap.exists()) {
+         const userData = userSnap.data();
+         const updates: any = {};
+         
+         // Total Stats
+         if (type === 'video') updates.totalVideosWatched = (userData.totalVideosWatched || 0) + 1;
+         if (type === 'game') updates.totalGamesPlayed = (userData.totalGamesPlayed || 0) + 1;
+         
+         // Weekly Stats
+         if (userData.currentWeek !== weekKey) {
+             updates.currentWeek = weekKey;
+             updates.weeklyVideosWatched = type === 'video' ? 1 : 0;
+             updates.weeklyGamesPlayed = type === 'game' ? 1 : 0;
+             updates.weeklyClaimedVideos = false;
+             updates.weeklyClaimedGames = false;
+         } else {
+             if (type === 'video') updates.weeklyVideosWatched = (userData.weeklyVideosWatched || 0) + 1;
+             if (type === 'game') updates.weeklyGamesPlayed = (userData.weeklyGamesPlayed || 0) + 1;
+         }
+         
+         // Monthly Stats
+         if (userData.currentMonth !== monthKey) {
+             updates.currentMonth = monthKey;
+             updates.monthlyVideosWatched = type === 'video' ? 1 : 0;
+             updates.monthlyGamesPlayed = type === 'game' ? 1 : 0;
+             updates.monthlyClaimedVideos = false;
+             updates.monthlyClaimedGames = false;
+         } else {
+             if (type === 'video') updates.monthlyVideosWatched = (userData.monthlyVideosWatched || 0) + 1;
+             if (type === 'game') updates.monthlyGamesPlayed = (userData.monthlyGamesPlayed || 0) + 1;
+         }
+         
+         t.update(userRef, updates);
       }
     });
   } catch (err) {
