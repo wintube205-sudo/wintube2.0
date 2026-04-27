@@ -9,14 +9,14 @@ export const WheelOfFortune = ({ user, points, setRefreshPoints }: any) => {
   const [rotation, setRotation] = useState(0);
 
   const segments = [
-    { label: '0x', multiplier: 0, color: '#ef4444' }, // Red
-    { label: '1.5x', multiplier: 1.5, color: '#3b82f6' }, // Blue
-    { label: '0.5x', multiplier: 0.5, color: '#f59e0b' }, // Yellow
-    { label: '2x', multiplier: 2, color: '#10b981' }, // Green
-    { label: '0x', multiplier: 0, color: '#ef4444' }, // Red
-    { label: '3x', multiplier: 3, color: '#8b5cf6' }, // Purple
-    { label: '0.5x', multiplier: 0.5, color: '#f59e0b' }, // Yellow
-    { label: '1x', multiplier: 1, color: '#6b7280' }, // Gray
+    { label: '0x', multiplier: 0, color: '#ef4444' }, // 0
+    { label: '2x', multiplier: 2, color: '#3b82f6' }, // 1
+    { label: '0.5x', multiplier: 0.5, color: '#f59e0b' }, // 2
+    { label: '3x', multiplier: 3, color: '#10b981' }, // 3
+    { label: '0x', multiplier: 0, color: '#ef4444' }, // 4
+    { label: '5x', multiplier: 5, color: '#8b5cf6' }, // 5
+    { label: '0.5x', multiplier: 0.5, color: '#f59e0b' }, // 6
+    { label: '1.5x', multiplier: 1.5, color: '#6b7280' }, // 7
   ];
 
   const spinWheel = async () => {
@@ -43,10 +43,10 @@ export const WheelOfFortune = ({ user, points, setRefreshPoints }: any) => {
       else if (rand < 0.40) winningIndex = 4; // 0x (20%)
       else if (rand < 0.55) winningIndex = 2; // 0.5x (15%)
       else if (rand < 0.70) winningIndex = 6; // 0.5x (15%)
-      else if (rand < 0.85) winningIndex = 7; // 1x (15%)
-      else if (rand < 0.95) winningIndex = 1; // 1.5x (10%)
-      else if (rand < 0.99) winningIndex = 3; // 2x (4%)
-      else winningIndex = 5; // 3x (1%)
+      else if (rand < 0.84) winningIndex = 7; // 1.5x (14%)
+      else if (rand < 0.94) winningIndex = 1; // 2x (10%)
+      else if (rand < 0.99) winningIndex = 3; // 3x (5%)
+      else winningIndex = 5; // 5x (1%)
 
       const segment = segments[winningIndex];
 
@@ -83,7 +83,7 @@ export const WheelOfFortune = ({ user, points, setRefreshPoints }: any) => {
         
         setResult({ msg, color });
         setIsSpinning(false);
-      }, 5000); // Wait for spin animation (5s)
+      }, 5000);
 
     } catch (err) {
       setResult({ msg: 'حدث خطأ', color: 'text-red-500' });
@@ -99,9 +99,9 @@ export const WheelOfFortune = ({ user, points, setRefreshPoints }: any) => {
 
       <div className="relative w-64 h-64 mx-auto mb-8">
         {/* Pointer */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-4 z-10 text-white drop-shadow-lg">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-4 z-20 text-white drop-shadow-lg">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 21L23 3H1L12 21Z" fill="#ef4444" />
+            <path d="M12 21L23 3H1L12 21Z" fill="#ef4444" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />
           </svg>
         </div>
 
@@ -110,35 +110,28 @@ export const WheelOfFortune = ({ user, points, setRefreshPoints }: any) => {
           className="w-full h-full rounded-full border-4 border-neutral-800 overflow-hidden relative shadow-2xl transition-transform duration-[5s] ease-[cubic-bezier(0.2,0.8,0.2,1)]"
           style={{ transform: `rotate(${rotation}deg)` }}
         >
+          {/* Background conic gradient */}
+          <div className="absolute inset-0" style={{
+            background: `conic-gradient(
+              ${segments.map((seg, i) => `${seg.color} ${i * (360 / segments.length)}deg ${(i + 1) * (360 / segments.length)}deg`).join(', ')}
+            )`
+          }} />
+          
+          {/* Text labels and lines */}
           {segments.map((seg, i) => {
-            const rot = i * (360 / segments.length);
-            const skew = 90 - (360 / segments.length);
+            const rot = i * (360 / segments.length) + (360 / segments.length / 2);
             return (
-              <div 
-                key={i} 
-                className="absolute top-0 right-0 w-1/2 h-1/2 origin-bottom-left"
-                style={{ 
-                  backgroundColor: seg.color,
-                  transform: `rotate(${rot}deg) skewY(-${skew}deg)`,
-                  border: '1px solid rgba(0,0,0,0.2)'
-                }}
-              >
-                <div 
-                  className="absolute bottom-0 left-0 text-white font-bold text-xs flex items-center justify-center pointer-events-none"
-                  style={{
-                    transform: `skewY(${skew}deg) rotate(${360/segments.length / 2}deg) translate(20px, -40px)`,
-                    width: '60px',
-                    height: '20px'
-                  }}
-                >
-                  {seg.label}
-                </div>
+              <div key={i} className="absolute inset-0 flex flex-col items-center pt-4"
+                   style={{ transform: `rotate(${rot}deg)` }}>
+                <span className="text-white font-black text-lg drop-shadow-md">{seg.label}</span>
               </div>
             );
           })}
+          
+          {/* Inner details */}
           <div className="absolute inset-0 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] pointer-events-none"></div>
-          <div className="absolute top-1/2 left-1/2 w-8 h-8 bg-neutral-800 rounded-full -translate-x-1/2 -translate-y-1/2 border-2 border-neutral-700 z-10 flex items-center justify-center">
-             <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+          <div className="absolute top-1/2 left-1/2 w-10 h-10 bg-neutral-800 rounded-full -translate-x-1/2 -translate-y-1/2 border-2 border-neutral-700 z-10 flex items-center justify-center shadow-lg">
+             <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
           </div>
         </div>
       </div>
