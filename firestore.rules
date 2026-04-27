@@ -56,14 +56,22 @@ service cloud.firestore {
            incoming().banned == existing().banned
         ) ||
         (
-           // مسار السماح بتوزيع الأرباح على الدعوة (خارجي)
+           // مسار السماح بتوزيع الأرباح على الدعوة (خارجي) - أو نسبة 20%
            isValidUserUpdate(incoming()) &&
            incoming().diff(existing()).affectedKeys().hasOnly(['points', 'referralCount', 'referralsEarnings']) &&
-           incoming().points == existing().points + 100 &&
-           incoming().referralCount == existing().get('referralCount', 0) + 1 &&
-           incoming().referralsEarnings == existing().get('referralsEarnings', 0) + 100 &&
            incoming().role == existing().role &&
-           incoming().banned == existing().banned
+           incoming().banned == existing().banned &&
+           ( // إما إضافة صديق جديد (+100) أو أرباح النشاط (20%)
+             (
+               incoming().points == existing().points + 100 &&
+               incoming().get('referralCount', 0) == existing().get('referralCount', 0) + 1 &&
+               incoming().get('referralsEarnings', 0) == existing().get('referralsEarnings', 0) + 100
+             ) || (
+               incoming().points > existing().points &&
+               incoming().get('referralCount', 0) == existing().get('referralCount', 0) &&
+               incoming().get('referralsEarnings', 0) > existing().get('referralsEarnings', 0)
+             )
+           )
         )
       );
 
@@ -71,7 +79,7 @@ service cloud.firestore {
         allow get: if isSignedIn() && request.auth.uid == userId;
         allow list: if isSignedIn() && request.auth.uid == userId;
         allow create: if isSignedIn() && 
-           (request.auth.uid == userId || (incoming().type == 'earn' && incoming().title == 'مكافأة دعوة صديق' && incoming().amount == 100)) && 
+           (request.auth.uid == userId || (incoming().type == 'earn' && (incoming().title == 'مكافأة دعوة صديق' || incoming().title == 'أرباح إحالة 20% (من نشاط صديق)') && incoming().amount > 0)) && 
            incoming().keys().hasAll(['title', 'amount', 'type', 'createdAt']) &&
            incoming().title is string && incoming().title.size() <= 100 &&
            incoming().amount is number &&
