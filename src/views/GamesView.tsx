@@ -4,6 +4,7 @@ import { updatePoints, incrementDailyProgress } from '../lib/firebase';
 import { collection, getDocs, query, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { AdBanner } from '../components/AdBanner';
+import { NativeAdBanner } from '../components/NativeAdBanner';
 
 export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => {
   const [bet, setBet] = useState(10);
@@ -148,6 +149,10 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
               </div>
             </div>
           )}
+
+          <div className="w-full justify-center flex my-6">
+            <NativeAdBanner />
+          </div>
 
           <h3 className="text-lg font-bold text-white mb-4">كل الألعاب</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">

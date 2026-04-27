@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Play, EyeOff, Loader2, Gift, Clock, X, Search } from 'lucide-react';
 import { updatePoints, incrementDailyProgress } from '../lib/firebase';
 import { AdBanner } from '../components/AdBanner';
+import { NativeAdBanner } from '../components/NativeAdBanner';
 
 export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
   const [videos, setVideos] = useState<any[]>([]);
@@ -101,6 +102,10 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
            <Search size={20} />
         </button>
       </form>
+
+      <div className="w-full flex justify-center mb-6">
+        <NativeAdBanner />
+      </div>
 
       {loading ? ( <div className="flex justify-center py-20 text-neutral-500"><Loader2 className="animate-spin w-10 h-10 text-red-500" /></div> ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
