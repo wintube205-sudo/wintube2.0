@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Flame, Calendar, Play, Gamepad2, CheckCircle2, Loader2, Trophy, Star, Target } from 'lucide-react';
-import { getDailyTasks, claimDailyReward, claimLongtermReward } from '../lib/firebase';
+import { getDailyTasks, claimDailyReward, claimLongtermReward, claimChainReward } from '../lib/firebase';
 
 export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, settings }: any) => {
   const [toast, setToast] = useState<any>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<'daily' | 'weekly' | 'achievements'>('daily');
+  const [activeSubTab, setActiveSubTab] = useState<'daily' | 'weekly' | 'achievements' | 'chains'>('daily');
   
   const [serverStats, setServerStats] = useState<any>(null);
 
@@ -72,6 +72,30 @@ export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, setting
     setTimeout(() => setToast(null), 3000);
   };
 
+  const handleClaimChain = async (stepIndex: number, requiredType: string, requiredAmount: number, reward: number) => {
+    if (!user) return;
+    if (isClaiming) return;
+    setIsClaiming(true);
+    
+    const res = await claimChainReward(user.id, stepIndex, requiredType, requiredAmount, reward);
+    if (res.success) {
+        setRefreshPoints((p: number) => p + 1);
+        setToast({ msg: `تم استلام مكافأة السلسلة! ✨`, isError: false });
+    } else setToast({ msg: `❌ ${res.error}`, isError: true });
+    
+    setIsClaiming(false);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const chainSteps = [
+     { type: 'video', amount: 5, reward: 200, title: 'شاهد 5 فيديوهات', targetTab: 'videos', icon: Play, color: 'text-red-500' },
+     { type: 'game', amount: 3, reward: 300, title: 'العب 3 ألعاب', targetTab: 'games', icon: Gamepad2, color: 'text-blue-500' },
+     { type: 'video', amount: 15, reward: 800, title: 'شاهد 15 فيديو', targetTab: 'videos', icon: Play, color: 'text-red-500' },
+     { type: 'game', amount: 10, reward: 1000, title: 'العب 10 ألعاب', targetTab: 'games', icon: Gamepad2, color: 'text-blue-500' },
+     { type: 'video', amount: 30, reward: 2000, title: 'شاهد 30 فيديو', targetTab: 'videos', icon: Play, color: 'text-red-500' },
+     { type: 'game', amount: 25, reward: 2500, title: 'العب 25 لعبة', targetTab: 'games', icon: Gamepad2, color: 'text-blue-500' }
+  ];
+
   if (isLoading) {
       return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-amber-500" size={40}/></div>;
   }
@@ -133,6 +157,9 @@ export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, setting
          </button>
          <button onClick={() => setActiveSubTab('achievements')} className={`px-5 py-2.5 rounded-xl font-bold whitespace-nowrap transition-colors ${activeSubTab === 'achievements' ? 'bg-white text-black' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
             <Trophy className="inline w-4 h-4 mr-1" /> إنجازات
+         </button>
+         <button onClick={() => setActiveSubTab('chains')} className={`px-5 py-2.5 rounded-xl font-bold whitespace-nowrap transition-colors ${activeSubTab === 'chains' ? 'bg-white text-black' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
+            <Target className="inline w-4 h-4 mr-1" /> سلاسل المهام
          </button>
       </div>
 
@@ -282,6 +309,65 @@ export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, setting
                    iconColor="text-yellow-500"
                 />
              </>
+          )}
+
+          {activeSubTab === 'chains' && (
+             <div className="space-y-6">
+                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+                   <h3 className="text-xl font-bold text-white mb-2">سلسلة المكافآت</h3>
+                   <p className="text-neutral-400 mb-6 text-sm">أكمل المهام بالترتيب لفتح المهمة التالية، واستمر في الحلقة لجمع المزيد من المكافآت.</p>
+                   
+                   <div className="space-y-4 relative">
+                      {/* Line connector */}
+                      <div className="absolute right-[27px] top-8 bottom-8 w-1 bg-neutral-800 rounded-full z-0"></div>
+
+                      {[0, 1, 2, 3].map((offset) => {
+                         const userStep = user?.chainStep || 0;
+                         const renderIdx = userStep + offset;
+                         const stepConf = chainSteps[renderIdx % chainSteps.length];
+                         
+                         // Calculation
+                         let progress = 0;
+                         if (offset === 0) {
+                            const base = stepConf.type === 'video' ? (user?.[`chainVideosBase_${userStep}`] || 0) : (user?.[`chainGamesBase_${userStep}`] || 0);
+                            const current = stepConf.type === 'video' ? (user?.totalVideosWatched || 0) : (user?.totalGamesPlayed || 0);
+                            progress = Math.max(0, current - base);
+                         } else {
+                            progress = 0; // future steps
+                         }
+
+                         const isCurrent = offset === 0;
+                         const isReady = isCurrent && progress >= stepConf.amount;
+                         
+                         return (
+                            <div key={`chain_${renderIdx}`} className={`relative z-10 bg-neutral-950 border ${isCurrent ? 'border-amber-500/50' : 'border-neutral-800/50'} rounded-2xl p-4 flex items-center gap-4 ${offset > 0 ? 'opacity-50' : ''}`}>
+                               <div className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center ${isCurrent ? 'bg-amber-500/20' : 'bg-neutral-900'} border ${isCurrent ? 'border-amber-500/30' : 'border-neutral-800'}`}>
+                                  {isCurrent && isReady ? <CheckCircle2 className="text-amber-500" /> : <stepConf.icon className={isCurrent ? stepConf.color : 'text-neutral-500'} />}
+                               </div>
+                               <div className="flex-grow">
+                                  <h3 className={`font-bold ${isCurrent ? 'text-white' : 'text-neutral-400'}`}>
+                                    {stepConf.title} <span className="text-amber-500 text-sm">({stepConf.reward}+)</span>
+                                  </h3>
+                                  <div className="w-full bg-neutral-900 rounded-full h-2 mt-2">
+                                     <div className={`h-2 rounded-full transition-all ${isCurrent ? (stepConf.type ==='video'?'bg-red-500':'bg-blue-500') : 'bg-neutral-700'}`} style={{ width: `${Math.min((progress/stepConf.amount)*100, 100)}%` }}></div>
+                                  </div>
+                                  <div className="text-xs text-neutral-500 mt-1 font-mono">{progress} / {stepConf.amount}</div>
+                               </div>
+                               <div className="flex-shrink-0">
+                                  {isCurrent ? (
+                                      isReady ? <button onClick={() => handleClaimChain(renderIdx, stepConf.type, stepConf.amount, stepConf.reward)} className="bg-amber-500 text-black font-bold px-4 py-2 rounded-xl shadow-lg shadow-amber-500/20 hover:scale-105 transition-transform">استلم!</button>
+                                      : <button onClick={() => setActiveTab(stepConf.targetTab)} className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-xl text-sm transition-colors">أكمل</button>
+                                  ) : (
+                                      <div className="px-4 py-2 text-sm text-neutral-600 font-bold">مغلق</div>
+                                  )}
+                               </div>
+                            </div>
+                         );
+                      })}
+
+                   </div>
+                </div>
+             </div>
           )}
 
       </div>

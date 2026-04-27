@@ -41,6 +41,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isOpen, isMobile, onCloseSide
     { id: 'home', icon: Play, label: 'الرئيسية' },
     { id: 'videos', icon: Play, label: 'الفيديوهات' },
     { id: 'offers', icon: Briefcase, label: 'جدار العروض', badge: 'جديد' },
+    { id: 'events', icon: Flame, label: 'الفعاليات', badge: 'مضاعف' },
     { id: 'earn', icon: Flame, label: 'المهام اليومية' },
     { id: 'games', icon: Gamepad2, label: 'الألعاب' },
     { id: 'referrals', icon: Users, label: 'دعوة الأصدقاء' },

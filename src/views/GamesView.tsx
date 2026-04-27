@@ -31,7 +31,8 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
     if (isClaiming || !pointReady || !user) return;
     setIsClaiming(true);
     try {
-      const reward = settings?.gamePoints || 5;
+      const baseReward = settings?.gamePoints || 5;
+      const reward = settings?.eventMode ? baseReward * 2 : baseReward;
       const response = await updatePoints(user.id, reward, 'لعب لعبة تسلية', 'earn');
       if (response.success) {
         await incrementDailyProgress(user.id, 'game');

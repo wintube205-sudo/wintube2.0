@@ -280,6 +280,89 @@ export async function getDailyTasks(uid: string) {
   return statSnap.data();
 }
 
+export async function claimChainReward(uid: string, stepIndex: number, requiredType: string, requiredAmount: number, baseReward: number) {
+  try {
+    const userRef = doc(db, 'users', uid);
+    let newTotal = 0;
+    let earnedPoints = 0;
+
+    await runTransaction(db, async (t) => {
+      const userSnap = await t.get(userRef);
+      if (!userSnap.exists()) throw new Error("User not found");
+      const userData = userSnap.data();
+
+      // Check current step
+      const currentStep = userData.chainStep || 0;
+      if (currentStep !== stepIndex) throw new Error("مرحلة غير صحيحة");
+
+      // Verify progress
+      const progress = requiredType === 'video' ? (userData.totalVideosWatched || 0) : (userData.totalGamesPlayed || 0);
+      const startValue = requiredType === 'video' ? (userData[`chainVideosBase_${stepIndex}`] || 0) : (userData[`chainGamesBase_${stepIndex}`] || 0);
+
+      if ((progress - startValue) < requiredAmount) {
+         throw new Error("لم تستوفِ شروط هذه المهمة بعد");
+      }
+
+      let reward = baseReward;
+      let level = userData.level || 1;
+      
+      // Calculate VIP / Level bonuses
+       let isVIP = false;
+       if (userData.isVIP && userData.vipExpiration) {
+          const exp = userData.vipExpiration.toDate ? userData.vipExpiration.toDate() : new Date(userData.vipExpiration);
+          if (exp > new Date()) {
+              isVIP = true;
+          }
+       }
+       
+       let bonusPoints = 0;
+       if (level >= 4) {
+         bonusPoints = Math.floor(baseReward * 0.10);
+       } else if (level >= 2) {
+         bonusPoints = Math.floor(baseReward * 0.05);
+       }
+       
+       reward += bonusPoints;
+       if (isVIP) reward = Math.floor(reward * 2);
+       
+       earnedPoints = reward;
+       newTotal = (userData.points || 0) + reward;
+
+       const nextStep = currentStep + 1;
+       
+       // Record start value for next step so it's a fresh counter
+       const currentTotalVideos = userData.totalVideosWatched || 0;
+       const currentTotalGames = userData.totalGamesPlayed || 0;
+
+       const updates: any = {
+           points: newTotal,
+           xp: (userData.xp || 0) + reward,
+           chainStep: nextStep,
+           [`chainStartValue_${nextStep}`]: nextStep % 2 === 0 ? currentTotalVideos : currentTotalGames // just generic recording, could record both
+       };
+       // Better to just record both base values for the next step
+       updates[`chainVideosBase_${nextStep}`] = currentTotalVideos;
+       updates[`chainGamesBase_${nextStep}`] = currentTotalGames;
+
+      // Check level upgrades
+      let currentLevel = level;
+      let threshold = currentLevel * 500 + Math.pow(currentLevel, 2) * 50;
+      while (updates.xp >= threshold) {
+         currentLevel++;
+         threshold = currentLevel * 500 + Math.pow(currentLevel, 2) * 50;
+      }
+      updates.level = currentLevel;
+
+      t.update(userRef, updates);
+    });
+
+    await logHistory(uid, `إنجاز متسلسل مرحلة ${stepIndex + 1}`, earnedPoints, 'earn');
+    return { success: true, newPoints: newTotal, error: null };
+  } catch(e: any) {
+    return { success: false, newPoints: 0, error: e.message };
+  }
+}
+
 export async function claimLongtermReward(uid: string, kind: 'weeklyVideos' | 'weeklyGames' | 'monthlyVideos' | 'monthlyGames' | 'lifetime100Videos' | 'lifetime100Games', target: number, baseReward: number, title: string) {
   try {
     const userRef = doc(db, 'users', uid);

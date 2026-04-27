@@ -39,7 +39,8 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
     if (isClaiming || !pointReady || !user) return;
     setIsClaiming(true);
     try {
-      const reward = settings?.videoPoints || 10;
+      const baseReward = settings?.videoPoints || 10;
+      const reward = settings?.eventMode ? baseReward * 2 : baseReward;
       const response = await updatePoints(user.id, reward, `مشاهدة فيديو: ${playingVideo?.title}`, 'earn');
       if (response.success) {
         // Increment daily tasks counter for video
@@ -116,7 +117,9 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
               <div className="relative aspect-video overflow-hidden">
                 <img src={vid.thumbnail_360_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Video thumbnail" />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white"><Play fill="currentColor" className="ml-1" /></div></div>
-                <div className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow flex items-center gap-1"><Gift size={12}/> +{settings?.videoPoints || 10}</div>
+                <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                  <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow flex items-center gap-1"><Gift size={12}/> +{settings?.eventMode ? (settings.videoPoints || 10) * 2 : (settings?.videoPoints || 10)} {settings?.eventMode && <span className="mr-1 text-[10px] bg-red-600 px-1 rounded">2X</span>}</div>
+                </div>
               </div>
               <div className="p-4"><h3 className="font-bold text-white text-sm line-clamp-2">{vid.title}</h3></div>
             </div>

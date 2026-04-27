@@ -13,7 +13,8 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [newGameForm, setNewGameForm] = useState({ title: '', url: '', thumbnail: '' });
   const [settingsForm, setSettingsForm] = useState<any>({ 
     videoPoints: 0, gamePoints: 0, minWithdrawal: 0, pointsPerDollar: 1000,
-    taskRewardLogin: 0, taskTargetVideos: 0, taskRewardVideos: 0, taskTargetGames: 0, taskRewardGames: 0
+    taskRewardLogin: 0, taskTargetVideos: 0, taskRewardVideos: 0, taskTargetGames: 0, taskRewardGames: 0,
+    eventMode: false
   });
 
   const loadData = useCallback(() => {
@@ -31,7 +32,8 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
           taskTargetVideos: res.settings.taskTargetVideos || 0,
           taskRewardVideos: res.settings.taskRewardVideos || 0,
           taskTargetGames: res.settings.taskTargetGames || 0,
-          taskRewardGames: res.settings.taskRewardGames || 0
+          taskRewardGames: res.settings.taskRewardGames || 0,
+          eventMode: res.settings.eventMode || false
         });
         if (onSettingsUpdated) onSettingsUpdated(res.settings);
       }
@@ -294,6 +296,20 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                    </div>
                 </div>
                 
+                 <div className="mt-8 flex items-center p-4 bg-neutral-950 border border-neutral-800 rounded-xl gap-4">
+                    <input 
+                       type="checkbox" 
+                       id="eventModeToggle"
+                       checked={settingsForm.eventMode || false}
+                       onChange={e => setSettingsForm({...settingsForm, eventMode: e.target.checked})}
+                       className="w-6 h-6 rounded bg-neutral-900 border-neutral-700 text-red-500 focus:ring-red-500"
+                    />
+                    <div>
+                       <label htmlFor="eventModeToggle" className="text-white font-bold text-lg select-none cursor-pointer block">تفعيل مهرجان النقاط (Event Mode 2X)</label>
+                       <p className="text-neutral-500 text-sm mt-1">عند تفعيله ستتضاعف نقاط الفيديوهات والألعاب بشكل فوري.</p>
+                    </div>
+                 </div>
+
                <h3 className="text-xl font-bold text-white mb-4 italic flex items-center gap-2 mt-8 border-t border-neutral-800 pt-8"><Settings className="text-red-500"/> إعدادات المهام اليومية</h3>
                
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

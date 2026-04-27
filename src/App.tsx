@@ -7,6 +7,7 @@ import { EarnView } from './views/EarnView';
 import { GamesView } from './views/GamesView';
 import { ReferralsView } from './views/ReferralsView';
 import { LeaderboardView } from './views/LeaderboardView';
+import { EventsView } from './views/EventsView';
 import { RewardsView } from './views/RewardsView';
 import { ProfileView } from './views/ProfileView';
 import { AdminView } from './views/AdminView';
@@ -314,6 +315,7 @@ const App = () => {
         {activeTab === 'videos' && <VideosView setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
         {activeTab === 'offers' && <OffersView user={user} setRefreshPoints={setRefreshPoints} />}
         {activeTab === 'earn' && <EarnView points={points} setRefreshPoints={setRefreshPoints} user={user} setActiveTab={setActiveTab} settings={settings} />}
+        {activeTab === 'events' && <EventsView settings={settings} setActiveTab={setActiveTab} />}
         {activeTab === 'games' && <GamesView points={points} setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
         {activeTab === 'referrals' && <ReferralsView user={user} />}
         {activeTab === 'leaderboard' && <LeaderboardView user={user} points={points} />}
