@@ -17,6 +17,8 @@ import { onAuthStateChanged, updateProfile, sendEmailVerification, signOut } fro
 import { collection, query, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { User, X, Loader2, Bell } from 'lucide-react';
 import { getGlobalSettings } from './services/api';
+import { AdBanner } from './components/AdBanner';
+import { NativeAdBanner } from './components/NativeAdBanner';
 
 const NotificationsModal = ({ isOpen, onClose, notifications, markAsRead }: any) => {
   if (!isOpen) return null;
@@ -301,7 +303,11 @@ const App = () => {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={isSidebarOpen} isMobile={true} onCloseSidebar={() => setIsSidebarOpen(false)} user={user} />
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={true} isMobile={false} onCloseSidebar={() => {}} user={user} />
 
-      <main className="md:pr-64 pt-20 pb-24 md:pb-8 min-h-screen flex flex-col px-4 md:px-8">
+      <main className="md:pr-64 pt-20 pb-40 md:pb-24 min-h-screen flex flex-col px-4 md:px-8">
+        <div className="w-full flex justify-center mb-4 flex-col items-center gap-2">
+           <AdBanner scriptSrc="https://pl29081721.profitablecpmratenetwork.com/af/01/2e/af012e0f5d549f7fbca9c56cc47808c8.js" />
+           <NativeAdBanner />
+        </div>
         {activeTab === 'home' && <HomeView setActiveTab={setActiveTab} />}
         {activeTab === 'videos' && <VideosView setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
         {activeTab === 'offers' && <OffersView user={user} setRefreshPoints={setRefreshPoints} />}
@@ -324,6 +330,12 @@ const App = () => {
           <div className="w-full text-center mt-2 opacity-50">© 2026 WinTube. جميع الحقوق محفوظة.</div>
         </footer>
       </main>
+
+      <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-30 flex justify-center bg-transparent pointer-events-none pb-2">
+        <div className="pointer-events-auto">
+          <AdBanner scriptSrc="https://pl29235932.profitablecpmratenetwork.com/95/8f/dd/958fddeaf0b4bc263a15d20890db89a6.js" />
+        </div>
+      </div>
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
       <AuthModal 

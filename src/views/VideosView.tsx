@@ -139,7 +139,7 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
                 <iframe src={`https://www.dailymotion.com/embed/video/${playingVideo.id}?autoplay=1&mute=0`} allowFullScreen className="w-full h-full aspect-video rounded-2xl shadow-2xl border border-neutral-800 bg-black relative z-0"></iframe>
              </div>
              <div className="w-full mt-8">
-               <AdBanner scriptSrc="https://pl29081721.profitablecpmratenetwork.com/af/01/2e/af012e0f5d549f7fbca9c56cc47808c8.js" />
+               {/* إعلانات */}
              </div>
           </div>
           {toast && <div className={`absolute bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold shadow-xl z-50 ${toast.includes('خطأ') ? 'bg-red-600' : 'bg-green-600'} text-white`}>{toast}</div>}

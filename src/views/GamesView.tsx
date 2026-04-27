@@ -178,7 +178,7 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
              </div>
              
              <div className="w-full mt-8">
-                <AdBanner scriptSrc="https://pl29081721.profitablecpmratenetwork.com/af/01/2e/af012e0f5d549f7fbca9c56cc47808c8.js" />
+                {/* إعلانات */}
              </div>
           </div>
         </div>
