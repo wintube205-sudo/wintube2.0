@@ -35,11 +35,11 @@ export const AdBanner: React.FC<AdBannerProps> = ({
 
   return (
     <div 
-      className="w-full flex justify-center items-center py-2 my-2 overflow-hidden" 
+      className="w-full flex justify-center items-center py-2 my-2 relative" 
       ref={adRef}
       style={{ minHeight: '90px', background: 'transparent' }}
     >
-      <span className="text-white/20 text-xs absolute z-[-1]">مساحة إعلانية</span>
+      <span className="text-white/20 text-xs absolute pointer-events-none">مساحة إعلانية</span>
     </div>
   );
 };
