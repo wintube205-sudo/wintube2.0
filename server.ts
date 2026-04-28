@@ -19,6 +19,97 @@ try {
 async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || '3000', 10);
+  app.use(express.json());
+
+  // --- Internal Platform API (For mobile apps, third-party sites, B2B sales) ---
+  const authenticateApi = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const apiKey = req.headers['x-api-key'] || req.query.api_key;
+    if (!apiKey) return res.status(401).json({ error: "Missing API Key" });
+    
+    try {
+      const db = admin.firestore();
+      const keyDoc = await db.collection('api_keys').doc(apiKey as string).get();
+      if (!keyDoc.exists || !keyDoc.data()?.active) {
+         return res.status(403).json({ error: "Invalid or inactive API Key" });
+      }
+      // Attach integration details to request
+      (req as any).integration = keyDoc.data();
+      next();
+    } catch(e) {
+      console.error(e);
+      res.status(500).json({ error: "API auth failed" });
+    }
+  };
+
+  // Get User Profile
+  app.get("/api/v1/users/:id", authenticateApi, async (req, res) => {
+    try {
+      const db = admin.firestore();
+      const userDoc = await db.collection('users').doc(req.params.id).get();
+      if (!userDoc.exists) return res.status(404).json({ error: "User not found" });
+      const data = userDoc.data();
+      res.json({
+        id: userDoc.id,
+        name: data?.name,
+        email: data?.email,
+        points: data?.points,
+        level: data?.level,
+        isVIP: data?.isVIP,
+      });
+    } catch(e) {
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  // Mutate User Points
+  app.post("/api/v1/users/:id/points", authenticateApi, async (req, res) => {
+    try {
+      const db = admin.firestore();
+      const { amount, reason, type } = req.body;
+      if (!amount || typeof amount !== 'number') return res.status(400).json({ error: "Invalid amount" });
+      
+      const userRef = db.collection('users').doc(req.params.id);
+      
+      await db.runTransaction(async (t) => {
+         const doc = await t.get(userRef);
+         if (!doc.exists) throw new Error("User not found");
+         const currentPoints = doc.data()?.points || 0;
+         t.update(userRef, { points: currentPoints + amount });
+         
+         const historyRef = userRef.collection('history').doc(Date.now().toString());
+         t.set(historyRef, {
+           title: reason || ((req as any).integration?.name + ' API Transaction'),
+           amount: amount,
+           type: type || (amount > 0 ? 'earn' : 'spend'),
+           integrationId: (req as any).integration?.name,
+           createdAt: admin.firestore.FieldValue.serverTimestamp()
+         });
+      });
+      res.json({ success: true, message: "Points updated successfully" });
+    } catch(e: any) {
+      res.status(500).json({ error: e.message || "Server error" });
+    }
+  });
+
+  // Fetch Public Content (Videos / Games)
+  app.get("/api/v1/content", authenticateApi, async (req, res) => {
+     try {
+        const db = admin.firestore();
+        const type = req.query.type as string; // 'game' or 'video'
+        
+        let contentQuery = db.collection('user_content').limit(20);
+        if (type) {
+           contentQuery = db.collection('user_content').where('type', '==', type).limit(20);
+        }
+        
+        const snap = await contentQuery.get();
+        const content = snap.docs.map(d => ({id: d.id, ...d.data()}));
+        res.json({ success: true, data: content });
+     } catch(e) {
+        res.status(500).json({ error: "Server error" });
+     }
+  });
+  // -----------------------------------------------------------------------------
 
   // إعداد مسار استقبال إشعارات العروض (Postback / Webhook)
   // الرابط الجديد الخاص بك في MyLead سيكون:

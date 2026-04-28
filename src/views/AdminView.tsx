@@ -18,6 +18,9 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
     eventMode: false
   });
 
+  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [newApiName, setNewApiName] = useState('');
+
   const loadData = useCallback(() => {
     setLoading(true);
     setError(null);
@@ -46,7 +49,44 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
       setTimeout(() => setToast(''), 3000);
       setLoading(false);
     });
+
+    // Load API Keys
+    import('firebase/firestore').then(({ collection, getDocs }) => {
+      getDocs(collection(db, 'api_keys')).then(snap => {
+         setApiKeys(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }).catch(e => console.error("Could not load API keys", e));
+    });
   }, [onSettingsUpdated]);
+
+  const createApiKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newApiName.trim()) return;
+    try {
+      const { setDoc, doc } = await import('firebase/firestore');
+      const newId = 'wt_dev_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+      const newDoc = {
+        name: newApiName,
+        active: true,
+        createdAt: new Date().toISOString()
+      };
+      await setDoc(doc(db, 'api_keys', newId), newDoc);
+      setApiKeys([...apiKeys, { id: newId, ...newDoc }]);
+      setNewApiName('');
+      showToast('تم توليد مفتاح جديد بنجاح');
+    } catch(err: any) {
+      showToast('خطأ: ' + err.message);
+    }
+  };
+
+  const toggleApiKey = async (id: string, currentStatus: boolean) => {
+     try {
+       const { updateDoc, doc } = await import('firebase/firestore');
+       await updateDoc(doc(db, 'api_keys', id), { active: !currentStatus });
+       setApiKeys(apiKeys.map(k => k.id === id ? { ...k, active: !currentStatus } : k));
+     } catch(err: any) {
+       showToast('خطأ: ' + err.message);
+     }
+  };
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -140,6 +180,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
           <button onClick={() => setActiveAdminTab('settings')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'settings' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Settings size={16}/> الإعدادات</button>
           <button onClick={() => setActiveAdminTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'notifications' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Bell size={16}/> الإشعارات</button>
           <button onClick={() => setActiveAdminTab('analytics')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'analytics' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>التحليلات</button>
+          <button onClick={() => setActiveAdminTab('api_keys')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'api_keys' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>منصة API</button>
         </div>
       </div>
 
@@ -435,6 +476,63 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                     form.elements.type.value = "system";
                  }} className="bg-neutral-800 text-neutral-300 text-xs px-3 py-1.5 rounded-lg border border-neutral-700 hover:text-white">نموذج: انتهاء حدث</button>
              </div>
+           </div>
+         </div>
+      )}
+
+      {activeAdminTab === 'api_keys' && (
+         <div className="animate-in fade-in space-y-8">
+           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8">
+             <h3 className="text-xl font-bold text-white mb-6">مولد مفاتيح API</h3>
+             <p className="text-sm text-neutral-400 mb-6 leading-relaxed">
+                استخدم هذه الواجهة لتوليد مفاتيح API تسمح بربط منصة WinTube مع تطبيقات الهواتف أو المواقع الأخرى (B2B). 
+                باستخدام هذه المفاتيح، يمكن للمنصات الخارجية جلب معلومات المستخدم وقراءة الرصيد وإضافته.
+             </p>
+             <form onSubmit={createApiKey} className="flex flex-col md:flex-row gap-4 mb-8">
+                <input required type="text" value={newApiName} onChange={e => setNewApiName(e.target.value)} placeholder="اسم التطبيق او المنصة (مثال: WinTube Mobile IOS)" className="flex-1 bg-neutral-950 border border-neutral-800 p-4 rounded-xl text-white focus:border-red-500" />
+                <button type="submit" className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-xl shrink-0">إنشاء مفتاح جديد</button>
+             </form>
+             
+             <div className="overflow-x-auto">
+               <table className="w-full text-right text-sm">
+                 <thead className="bg-neutral-950 text-neutral-400 border-b border-neutral-800">
+                    <tr><th className="p-4">اسم المنصة</th><th className="p-4">مفتاح API</th><th className="p-4">تاريخ الإنشاء</th><th className="p-4 text-center">الحالة</th></tr>
+                 </thead>
+                 <tbody className="text-white">
+                    {apiKeys.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-neutral-500">لا توجد مفاتيح</td></tr> : apiKeys.map((key) => (
+                       <tr key={key.id} className={`border-b border-neutral-800 ${!key.active ? 'opacity-50' : ''}`}>
+                          <td className="p-4 font-bold">{key.name}</td>
+                          <td className="p-4 font-mono text-xs text-amber-400 select-all">{key.id}</td>
+                          <td className="p-4 text-neutral-500">{new Date(key.createdAt).toLocaleDateString('ar-EG')}</td>
+                          <td className="p-4 flex justify-center">
+                             <button onClick={() => toggleApiKey(key.id, key.active)} className={`px-4 py-1.5 rounded-full text-xs font-bold ${key.active ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-green-500/20 text-green-500 border border-green-500/50'}`}>
+                                {key.active ? 'إيقاف' : 'تفعيل'}
+                             </button>
+                          </td>
+                       </tr>
+                    ))}
+                 </tbody>
+               </table>
+             </div>
+           </div>
+           
+           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8">
+              <h3 className="text-xl font-bold text-white mb-6">توثيق الواجهة البرمجية (API Documentation)</h3>
+              <div className="space-y-4 font-mono text-sm" dir="ltr" style={{ textAlign: 'left' }}>
+                  <div className="bg-neutral-950 p-4 border border-neutral-800 rounded-lg">
+                     <span className="text-blue-400 font-bold">GET</span> /api/v1/users/:id
+                     <p className="text-neutral-500 mt-2 text-xs">Headers: X-API-Key: your_key</p>
+                  </div>
+                  <div className="bg-neutral-950 p-4 border border-neutral-800 rounded-lg">
+                     <span className="text-green-400 font-bold">POST</span> /api/v1/users/:id/points
+                     <p className="text-neutral-500 mt-2 text-xs">Headers: X-API-Key: your_key</p>
+                     <p className="text-neutral-500 mt-1 text-xs">Body: {`{ "amount": 100, "reason": "Watched ad", "type": "earn" }`}</p>
+                  </div>
+                  <div className="bg-neutral-950 p-4 border border-neutral-800 rounded-lg">
+                     <span className="text-blue-400 font-bold">GET</span> /api/v1/content?type=game
+                     <p className="text-neutral-500 mt-2 text-xs">Headers: X-API-Key: your_key</p>
+                  </div>
+              </div>
            </div>
          </div>
       )}

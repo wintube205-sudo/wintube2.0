@@ -5,6 +5,7 @@ import { VideosView } from './views/VideosView';
 import { OffersView } from './views/OffersView';
 import { EarnView } from './views/EarnView';
 import { GamesView } from './views/GamesView';
+import { AffiliateView } from './views/AffiliateView';
 import { ReferralsView } from './views/ReferralsView';
 import { LeaderboardView } from './views/LeaderboardView';
 import { EventsView } from './views/EventsView';
@@ -15,7 +16,7 @@ import { ProfileView } from './views/ProfileView';
 import { AdminView } from './views/AdminView';
 import { LegalView } from './views/LegalView';
 
-import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail, db, checkVPNAndProxy } from './lib/firebase';
+import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail, db, checkVPNAndProxy, recordAffiliateClick } from './lib/firebase';
 import { onAuthStateChanged, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
 import { collection, query, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { User, X, Loader2, Bell } from 'lucide-react';
@@ -202,6 +203,14 @@ const App = () => {
     if (ref) {
       localStorage.setItem('referralCode', ref);
     }
+    const aff = params.get('aff');
+    if (aff) {
+      localStorage.setItem('affiliateCode', aff);
+      if (!localStorage.getItem('affClickLog')) {
+         recordAffiliateClick(aff);
+         localStorage.setItem('affClickLog', 'true');
+      }
+    }
 
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
@@ -338,6 +347,7 @@ const App = () => {
         {activeTab === 'earn' && <EarnView points={points} setRefreshPoints={setRefreshPoints} user={user} setActiveTab={setActiveTab} settings={settings} />}
         {activeTab === 'events' && <EventsView settings={settings} setActiveTab={setActiveTab} />}
         {activeTab === 'games' && <GamesView points={points} setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
+        {activeTab === 'affiliate' && <AffiliateView user={user} setActiveTab={setActiveTab} />}
         {activeTab === 'referrals' && <ReferralsView user={user} />}
         {activeTab === 'leaderboard' && <LeaderboardView user={user} points={points} />}
         {activeTab === 'rewards' && <RewardsView points={points} setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}

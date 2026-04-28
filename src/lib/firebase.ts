@@ -99,6 +99,20 @@ export async function checkVPNAndProxy() {
   }
 }
 
+export async function recordAffiliateClick(affId: string) {
+   try {
+      const affRef = doc(db, 'users', affId);
+      const affDoc = await getDoc(affRef);
+      if (affDoc.exists() && affDoc.data()?.isMarketer) {
+         await updateDoc(affRef, {
+             affiliateClicks: (affDoc.data()?.affiliateClicks || 0) + 1
+         });
+      }
+   } catch(e) {
+      console.error(e);
+   }
+}
+
 export async function createUserDocument(user: any) {
   const userRef = doc(db, 'users', user.uid);
   const snap = await getDoc(userRef);
@@ -125,11 +139,14 @@ export async function createUserDocument(user: any) {
   }
 
   let refCode = localStorage.getItem('referralCode');
+  let affCode = localStorage.getItem('affiliateCode');
   
   let ref1 = null;
   let ref2 = null;
   let ref3 = null;
+  let referredByAffiliate = null;
 
+  // Process normal ref code
   if (refCode && refCode !== user.uid) {
     ref1 = refCode;
     try {
@@ -141,6 +158,16 @@ export async function createUserDocument(user: any) {
          ref1 = null; // invalid refcode
       }
     } catch(e) { console.error(e) }
+  }
+
+  // Process affiliate code
+  if (affCode && affCode !== user.uid) {
+     try {
+        const affDoc = await getDoc(doc(db, 'users', affCode));
+        if (affDoc.exists() && affDoc.data()?.isMarketer) {
+           referredByAffiliate = affCode;
+        }
+     } catch(e) { console.error(e) }
   }
 
   const newUser = {
@@ -159,6 +186,11 @@ export async function createUserDocument(user: any) {
     level: 1, // Start at level 1 (Bronze)
     xp: 0, // Experience Points
     deviceId: deviceId, // Anti-Cheat marker
+    isMarketer: false,
+    referredByAffiliate,
+    affiliateClicks: 0,
+    affiliateSignups: 0,
+    affiliateBalance: 0,
 
     streak: 0, // Daily login streak
     isVIP: false,
@@ -173,7 +205,7 @@ export async function createUserDocument(user: any) {
     throw new Error(`Error writing user doc: ${err.message}`);
   }
 
-  if (refCode && refCode !== user.uid) {
+  if (refCode && refCode !== user.uid && !referredByAffiliate) {
     try {
       await processReferralReward(refCode);
       localStorage.removeItem('referralCode');
@@ -182,7 +214,33 @@ export async function createUserDocument(user: any) {
     }
   }
 
+  if (referredByAffiliate) {
+     try {
+       await processAffiliateReward(referredByAffiliate);
+       localStorage.removeItem('affiliateCode');
+     } catch(e: any) {
+       console.error("Affiliate Error", e);
+     }
+  }
+
   return { id: user.uid, ...newUser };
+}
+
+async function processAffiliateReward(affId: string) {
+   const affRef = doc(db, 'users', affId);
+   await runTransaction(db, async (t) => {
+      const affDoc = await t.get(affRef);
+      if (!affDoc.exists()) return;
+
+      const currentBalance = affDoc.data()?.affiliateBalance || 0;
+      const currentSignups = affDoc.data()?.affiliateSignups || 0;
+
+      // Give $0.50 per signup (example amount)
+      t.update(affRef, {
+         affiliateBalance: currentBalance + 0.50,
+         affiliateSignups: currentSignups + 1
+      });
+   });
 }
 
 async function processReferralReward(referrerId: string) {

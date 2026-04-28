@@ -110,6 +110,10 @@ service cloud.firestore {
          (!incoming().keys().hasAny(['pointsPerDollar']) || (incoming().pointsPerDollar is number && incoming().pointsPerDollar > 0));
     }
 
+    match /api_keys/{keyId} {
+      allow read, write: if isAdmin();
+    }
+
     match /games/{gameId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
