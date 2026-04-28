@@ -13,17 +13,39 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
   const [isClaiming, setIsClaiming] = useState(false); 
   const [pointReady, setPointReady] = useState(false); 
   const [searchQuery, setSearchQuery] = useState('');
+  const [watchStartTime, setWatchStartTime] = useState<number>(0);
 
-  const fetchVideos = useCallback((query = '') => {
+  const fetchVideos = useCallback(async (searchQueryRaw = '') => {
     setLoading(true);
-    const endpoint = query 
-      ? `https://api.dailymotion.com/videos?search=${encodeURIComponent(query)}&limit=15&fields=id,title,thumbnail_360_url`
-      : `https://api.dailymotion.com/videos?channel=videogames&limit=15&fields=id,title,thumbnail_360_url`;
+    try {
+      // Fetch user uploaded content
+      let userVideos: any[] = [];
+      try {
+        const { collection, query, where, limit, getDocs } = await import('firebase/firestore');
+        const { db } = await import('../lib/firebase');
+        const q = query(
+          collection(db, 'user_content'), 
+          where('type', '==', 'video'),
+          limit(10)
+        );
+        const snap = await getDocs(q);
+        userVideos = snap.docs.map(doc => ({ isUserContent: true, id: doc.id, ...doc.data() }));
+      } catch(e) {
+        console.error('Failed to fetch user videos', e);
+      }
+
+      const endpoint = searchQueryRaw 
+        ? `https://api.dailymotion.com/videos?search=${encodeURIComponent(searchQueryRaw)}&limit=15&fields=id,title,thumbnail_360_url`
+        : `https://api.dailymotion.com/videos?channel=videogames&limit=15&fields=id,title,thumbnail_360_url`;
+        
+      const res = await fetch(endpoint);
+      const data = await res.json();
       
-    fetch(endpoint)
-      .then(res => res.json())
-      .then(data => { setVideos(data.list || []); setLoading(false); })
-      .catch(() => setLoading(false));
+      setVideos([...userVideos, ...(data.list || [])]);
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -37,6 +59,24 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
 
   const requestPointFromServer = useCallback(async () => {
     if (isClaiming || !pointReady || !user) return;
+    
+    // Anti-Cheat: Validate true watch time (at least 30 seconds)
+    if (!watchStartTime) {
+        setToast('❌ أكتشف النظام محاولة غش (عدم مشاهدة الفديو). تم إبطال النقطة.');
+        setPlayingVideo(null);
+        setPointReady(false);
+        return;
+    }
+    const timeElapsed = Date.now() - watchStartTime;
+    if (timeElapsed < 29000) { // Using 29s to account for slight timer drift
+        setToast('❌ أكتشف النظام محاولة غش (تخطي الوقت). تم إبطال النقطة.');
+        setPlayingVideo(null);
+        setPointReady(false);
+        return;
+    }
+
+    setWatchStartTime(0); // Reset for the next video
+
     setIsClaiming(true);
     try {
       const baseReward = settings?.videoPoints || 10;
@@ -45,6 +85,16 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
       if (response.success) {
         // Increment daily tasks counter for video
         await incrementDailyProgress(user.id, 'video');
+
+        // Reward Uploader
+        if (playingVideo?.isUserContent && playingVideo?.uploaderId && playingVideo?.uploaderId !== user.id) {
+           const { increment, doc, updateDoc } = await import('firebase/firestore');
+           const { db } = await import('../lib/firebase');
+           try {
+               await updatePoints(playingVideo.uploaderId, 5, `أرباح مشاهدة محتواك: ${playingVideo.title}`, 'earn');
+               await updateDoc(doc(db, 'user_content', playingVideo.id), { views: increment(1) });
+           } catch(e) { console.error(e) }
+        }
 
         setRefreshPoints((prev: number) => prev + 1);
         setToast(`+ مكافأة ${reward} نقطة آمنة!`); 
@@ -113,9 +163,16 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
       {loading ? ( <div className="flex justify-center py-20 text-neutral-500"><Loader2 className="animate-spin w-10 h-10 text-red-500" /></div> ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {videos.map((vid) => (
-            <div key={vid.id} onClick={() => { setPlayingVideo(vid); setTimeLeft(30); setPointReady(false); setToast(''); }} className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden cursor-pointer hover:border-red-500 transition-all group">
-              <div className="relative aspect-video overflow-hidden">
-                <img src={vid.thumbnail_360_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Video thumbnail" />
+            <div key={vid.id} onClick={() => { setPlayingVideo(vid); setTimeLeft(30); setPointReady(false); setToast(''); setWatchStartTime(Date.now()); }} className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden cursor-pointer hover:border-red-500 transition-all group relative">
+              {vid.isUserContent && (
+                 <div className="absolute top-2 left-2 z-10 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow">محتوى مستخدم</div>
+              )}
+              <div className="relative aspect-video overflow-hidden bg-neutral-800 flex items-center justify-center">
+                {vid.thumbnail_360_url ? (
+                   <img src={vid.thumbnail_360_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Video thumbnail" />
+                ) : (
+                   <Play size={40} className="text-neutral-600" />
+                )}
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white"><Play fill="currentColor" className="ml-1" /></div></div>
                 <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                   <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow flex items-center gap-1"><Gift size={12}/> +{settings?.eventMode ? (settings.videoPoints || 10) * 2 : (settings?.videoPoints || 10)} {settings?.eventMode && <span className="mr-1 text-[10px] bg-red-600 px-1 rounded">2X</span>}</div>
@@ -146,7 +203,7 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
           </div>
           <div className="flex-grow w-full max-w-5xl mx-auto p-4 flex flex-col items-center justify-center relative overflow-y-auto">
              <div className="w-full relative flex-grow max-h-[70vh]">
-                <iframe src={`https://www.dailymotion.com/embed/video/${playingVideo.id}?autoplay=1&mute=0`} allowFullScreen className="w-full h-full aspect-video rounded-2xl shadow-2xl border border-neutral-800 bg-black relative z-0"></iframe>
+                <iframe src={playingVideo.isUserContent ? playingVideo.url : `https://www.dailymotion.com/embed/video/${playingVideo.id}?autoplay=1&mute=0`} allowFullScreen className="w-full h-full aspect-video rounded-2xl shadow-2xl border border-neutral-800 bg-black relative z-0"></iframe>
              </div>
              <div className="w-full mt-8">
                {/* إعلانات */}

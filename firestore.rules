@@ -120,6 +120,27 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /user_content/{contentId} {
+      allow read: if true;
+      allow list: if true;
+      allow create: if isSignedIn() &&
+         incoming().keys().hasAll(['title', 'url', 'type', 'uploaderId', 'uploaderName', 'views', 'createdAt']) &&
+         incoming().uploaderId == request.auth.uid &&
+         incoming().type in ['video', 'game'] &&
+         incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 100 &&
+         incoming().url is string && incoming().url.size() > 0 && incoming().url.size() <= 500 &&
+         incoming().uploaderName is string &&
+         incoming().views == 0 &&
+         incoming().createdAt == request.time;
+      allow update: if (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['views']) && incoming().views == existing().views + 1);
+      allow delete: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.uploaderId);
+    }
+
+    match /analytics/{docId} {
+      allow create: if true;
+      allow read, delete: if isAdmin();
+    }
+
     match /withdrawals/{withdrawalId} {
       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);

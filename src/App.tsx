@@ -8,18 +8,21 @@ import { GamesView } from './views/GamesView';
 import { ReferralsView } from './views/ReferralsView';
 import { LeaderboardView } from './views/LeaderboardView';
 import { EventsView } from './views/EventsView';
+import { PublishView } from './views/PublishView';
+import { MarketView } from './views/MarketView';
 import { RewardsView } from './views/RewardsView';
 import { ProfileView } from './views/ProfileView';
 import { AdminView } from './views/AdminView';
 import { LegalView } from './views/LegalView';
 
-import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail, db } from './lib/firebase';
+import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail, db, checkVPNAndProxy } from './lib/firebase';
 import { onAuthStateChanged, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
 import { collection, query, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { User, X, Loader2, Bell } from 'lucide-react';
 import { getGlobalSettings } from './services/api';
 import { AdBanner } from './components/AdBanner';
 import { NativeAdBanner } from './components/NativeAdBanner';
+import { initAnalytics, setAnalyticsTab } from './services/AnalyticsService';
 
 const NotificationsModal = ({ isOpen, onClose, notifications, markAsRead }: any) => {
   if (!isOpen) return null;
@@ -179,7 +182,17 @@ const App = () => {
   const [settings, setSettings] = useState<any>(null);
 
   useEffect(() => {
+    const cleanup = initAnalytics(user?.id || null);
+    return () => cleanup();
+  }, [user]);
+
+  useEffect(() => {
+    setAnalyticsTab(activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
     getGlobalSettings().then(res => setSettings(res));
+    checkVPNAndProxy();
   }, []);
 
   useEffect(() => {
@@ -192,24 +205,30 @@ const App = () => {
 
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
-        let uData: any = await getUserData(fbUser.uid);
-        if (!uData) {
-          uData = await createUserDocument(fbUser);
+        try {
+          let uData: any = await getUserData(fbUser.uid);
+          if (!uData) {
+            uData = await createUserDocument(fbUser);
+          }
+          setUser(uData);
+          setPoints(uData.points || 0);
+
+          const isAdminCheck = uData.role === 'admin' || (fbUser.email && (fbUser.email.toLowerCase().trim() === 'iq.mh300@gmail.com' || fbUser.email.toLowerCase().trim() === 'wintube205@gmail.com'));
+          if (isAdminCheck) setActiveTab('admin');
+
+          // Subscribe to notifications
+          const notifQuery = query(collection(db, 'users', fbUser.uid, 'notifications'), orderBy('createdAt', 'desc'));
+          onSnapshot(notifQuery, (snapshot) => {
+             const notifs: any[] = [];
+             snapshot.forEach(doc => notifs.push({ id: doc.id, ...doc.data() }));
+             setNotifications(notifs);
+          });
+        } catch (error: any) {
+           console.error("Auth / Anti-Cheat Error:", error);
+           alert(error.message);
+           await signOut(auth);
+           setUser(null);
         }
-        setUser(uData);
-        setPoints(uData.points || 0);
-
-        const isAdminCheck = uData.role === 'admin' || (fbUser.email && (fbUser.email.toLowerCase().trim() === 'iq.mh300@gmail.com' || fbUser.email.toLowerCase().trim() === 'wintube205@gmail.com'));
-        if (isAdminCheck) setActiveTab('admin');
-
-        // Subscribe to notifications
-        const notifQuery = query(collection(db, 'users', fbUser.uid, 'notifications'), orderBy('createdAt', 'desc'));
-        onSnapshot(notifQuery, (snapshot) => {
-           const notifs: any[] = [];
-           snapshot.forEach(doc => notifs.push({ id: doc.id, ...doc.data() }));
-           setNotifications(notifs);
-        });
-
       } else {
         setUser(null);
         setPoints(0);
@@ -309,11 +328,13 @@ const App = () => {
 
       <main className="md:pr-64 pt-20 pb-40 md:pb-24 min-h-screen flex flex-col px-4 md:px-8">
         <div className="w-full flex justify-center mb-4">
-          {!user?.isVIP && <AdBanner scriptSrc="https://pl29081721.profitablecpmratenetwork.com/af/01/2e/af012e0f5d549f7fbca9c56cc47808c8.js" />}
+          {!user?.isVIP && <AdBanner />}
         </div>
         {activeTab === 'home' && <HomeView setActiveTab={setActiveTab} />}
         {activeTab === 'videos' && <VideosView setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
+        {activeTab === 'publish' && <PublishView user={user} />}
         {activeTab === 'offers' && <OffersView user={user} setRefreshPoints={setRefreshPoints} />}
+        {activeTab === 'market' && <MarketView user={user} points={points} setRefreshPoints={setRefreshPoints} />}
         {activeTab === 'earn' && <EarnView points={points} setRefreshPoints={setRefreshPoints} user={user} setActiveTab={setActiveTab} settings={settings} />}
         {activeTab === 'events' && <EventsView settings={settings} setActiveTab={setActiveTab} />}
         {activeTab === 'games' && <GamesView points={points} setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
@@ -337,7 +358,7 @@ const App = () => {
 
       <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-30 flex justify-center bg-transparent pointer-events-none pb-2">
         <div className="pointer-events-auto">
-          {!user?.isVIP && <AdBanner scriptSrc="https://pl29235932.profitablecpmratenetwork.com/95/8f/dd/958fddeaf0b4bc263a15d20890db89a6.js" />}
+          {!user?.isVIP && <AdBanner />}
         </div>
       </div>
 

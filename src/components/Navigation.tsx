@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Gamepad2, Briefcase, Trophy, User, LogIn, Menu, Wallet, Flame, Users, LayoutDashboard, ShieldCheck, Coins, Bell, LogOut } from 'lucide-react';
+import { Play, Gamepad2, Briefcase, Trophy, User, LogIn, Menu, Wallet, Flame, Users, LayoutDashboard, ShieldCheck, Coins, Bell, LogOut, ShoppingCart, Upload } from 'lucide-react';
 import { signOut } from '../lib/firebase';
 
 export const Header = ({ user, points, onOpenAuth, onToggleSidebar, setActiveTab, unreadNotifications = 0, onOpenNotifications }: any) => (
@@ -40,7 +40,9 @@ export const Sidebar = ({ activeTab, setActiveTab, isOpen, isMobile, onCloseSide
   const navItems = [
     { id: 'home', icon: Play, label: 'الرئيسية' },
     { id: 'videos', icon: Play, label: 'الفيديوهات' },
+    { id: 'publish', icon: Upload, label: 'نشر محتوى' },
     { id: 'offers', icon: Briefcase, label: 'جدار العروض', badge: 'جديد' },
+    { id: 'market', icon: ShoppingCart, label: 'المتجر' },
     { id: 'events', icon: Flame, label: 'الفعاليات', badge: 'مضاعف' },
     { id: 'earn', icon: Flame, label: 'المهام اليومية' },
     { id: 'games', icon: Gamepad2, label: 'الألعاب' },

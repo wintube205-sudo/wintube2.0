@@ -1,37 +1,44 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { getBestAdNetwork } from '../services/AdsService';
 
 interface AdBannerProps {
   scriptSrc?: string;
 }
 
-export const AdBanner: React.FC<AdBannerProps> = ({ 
-  scriptSrc = 'https://pl29235932.profitablecpmratenetwork.com/95/8f/dd/958fddeaf0b4bc263a15d20890db89a6.js' 
-}) => {
+export const AdBanner: React.FC<AdBannerProps> = ({ scriptSrc }) => {
   const adRef = useRef<HTMLDivElement>(null);
+  const [resolvedSrc, setResolvedSrc] = useState<string | null>(scriptSrc || null);
+
+  useEffect(() => {
+    if (!scriptSrc) {
+       getBestAdNetwork('banner').then(src => {
+          setResolvedSrc(src);
+       });
+    }
+  }, [scriptSrc]);
 
   useEffect(() => {
     const container = adRef.current;
-    if (!container) return;
+    if (!container || !resolvedSrc) return;
 
+    // Check if script already exists to prevent duplicate injection
     if (!container.hasChildNodes()) {
-      // Create and append the script
       const script = document.createElement('script');
-      script.src = scriptSrc;
+      script.src = resolvedSrc;
       script.async = true;
       
-      script.onload = () => console.log('Ad script loaded successfully:', scriptSrc);
-      script.onerror = () => console.log('Ad script was blocked or failed to load (usually by an AdBlocker).');
+      script.onload = () => console.log('Ad script loaded successfully:', resolvedSrc);
+      script.onerror = () => console.log('Ad script was blocked or failed to load.');
 
       container.appendChild(script);
     }
     
     return () => {
-      // Optional cleanup if the component unmounts
       if (container) {
          container.innerHTML = '';
       }
     };
-  }, [scriptSrc]);
+  }, [resolvedSrc]);
 
   return (
     <div 

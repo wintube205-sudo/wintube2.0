@@ -76,6 +76,34 @@
         "createdAt": { "type": "string" }
       },
       "required": ["title", "url", "thumbnail", "createdAt"]
+    },
+    "UserContent": {
+      "title": "User Content",
+      "description": "Content published by users (videos/games).",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "url": { "type": "string" },
+        "type": { "type": "string", "enum": ["video", "game"] },
+        "uploaderId": { "type": "string" },
+        "uploaderName": { "type": "string" },
+        "views": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "url", "type", "uploaderId", "uploaderName", "views", "createdAt"]
+    },
+    "AnalyticsEvent": {
+      "title": "Analytics Event",
+      "description": "User clicks and exits",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "data": { "type": "string" },
+        "path": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["type", "createdAt"]
     }
   },
   "firestore": {
@@ -102,6 +130,14 @@
     "/games/{gameId}": {
       "schema": { "$ref": "#/entities/Game" },
       "description": "List of games added by admin."
+    },
+    "/user_content/{contentId}": {
+      "schema": { "$ref": "#/entities/UserContent" },
+      "description": "Content published by users."
+    },
+    "/analytics/{docId}": {
+      "schema": { "$ref": "#/entities/AnalyticsEvent" },
+      "description": "App analytics and heatmaps."
     }
   }
 }

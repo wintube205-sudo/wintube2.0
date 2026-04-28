@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LayoutDashboard, Loader2, Settings } from 'lucide-react';
+import { LayoutDashboard, Loader2, Settings, Bell } from 'lucide-react';
 import { getAdminData, handleAdminWithdrawal, updateGlobalSettings } from '../services/api';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 
 export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [activeAdminTab, setActiveAdminTab] = useState('dashboard');
@@ -137,8 +138,12 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
           <button onClick={() => setActiveAdminTab('users')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'users' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>المستخدمين</button>
           <button onClick={() => setActiveAdminTab('games')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'games' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الألعاب</button>
           <button onClick={() => setActiveAdminTab('settings')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'settings' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Settings size={16}/> الإعدادات</button>
+          <button onClick={() => setActiveAdminTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'notifications' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Bell size={16}/> الإشعارات</button>
+          <button onClick={() => setActiveAdminTab('analytics')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'analytics' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>التحليلات</button>
         </div>
       </div>
+
+      {activeAdminTab === 'analytics' && <AnalyticsDashboard />}
 
       {activeAdminTab === 'dashboard' && (
         <div className="animate-in fade-in">
@@ -371,6 +376,67 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
              </div>
            </div>
         </div>
+      )}
+
+      {activeAdminTab === 'notifications' && (
+         <div className="animate-in fade-in">
+           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+             <h3 className="text-xl font-bold text-white mb-6 relative z-10 flex items-center gap-2"><Bell className="text-blue-500" /> إرسال إشعارات جماعية</h3>
+             <form onSubmit={async (e) => {
+               e.preventDefault();
+               try {
+                 const { sendGlobalNotification } = await import('../lib/firebase');
+                 // @ts-ignore
+                 const title = e.target.elements.title.value;
+                 // @ts-ignore
+                 const message = e.target.elements.message.value;
+                 // @ts-ignore
+                 const type = e.target.elements.type.value;
+                 if (!title || !message) return showToast('يرجى ملء جميع الحقول');
+                 await sendGlobalNotification(title, message, type);
+                 showToast('تم إرسال الإشعار للجميع بنجاح');
+                 // @ts-ignore
+                 e.target.reset();
+               } catch (err: any) {
+                 showToast('خطأ: ' + err.message);
+               }
+             }} className="relative z-10 space-y-6">
+               <div className="space-y-4">
+                 <div>
+                   <label className="text-neutral-400 text-sm font-bold block mb-2">عنوان الإشعار</label>
+                   <input required name="title" type="text" placeholder="مثال: توفر مهام جديدة! 🚀" className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white focus:border-blue-500 transition-colors" />
+                 </div>
+                 <div>
+                   <label className="text-neutral-400 text-sm font-bold block mb-2">تفاصيل الإشعار</label>
+                   <textarea required name="message" rows={3} placeholder="اكتب رسالتك للمستخدمين..." className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white focus:border-blue-500 transition-colors" />
+                 </div>
+                 <div>
+                   <label className="text-neutral-400 text-sm font-bold block mb-2">نوع الإشعار</label>
+                   <select name="type" className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white focus:border-blue-500 transition-colors">
+                     <option value="system">نظام (مهام، تحديثات، أخبار)</option>
+                     <option value="reward">مكافأة (أحداث، نقاط مضاعفة)</option>
+                   </select>
+                 </div>
+               </div>
+               <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all">إرسال الإشعار الآن</button>
+             </form>
+             <div className="mt-6 flex flex-wrap gap-2">
+                 <button onClick={() => {
+                    const form: any = document.querySelector('form');
+                    form.elements.title.value = "توفر مهام عروض جديدة! 💸";
+                    form.elements.message.value = "تمت إضافة عروض استبيانات وتطبيقات جديدة! ادخل الآن قسم العروض وابدأ الربح.";
+                    form.elements.type.value = "system";
+                 }} className="bg-neutral-800 text-neutral-300 text-xs px-3 py-1.5 rounded-lg border border-neutral-700 hover:text-white">نموذج: مهام جديدة</button>
+                 <button onClick={() => {
+                    const form: any = document.querySelector('form');
+                    form.elements.title.value = "انتهى حدث النقاط المضاعفة ⏳";
+                    form.elements.message.value = "شكراً لمشاركتك في مهرجان النقاط المضاعفة! انتظرونا في فعاليات قادمة.";
+                    form.elements.type.value = "system";
+                 }} className="bg-neutral-800 text-neutral-300 text-xs px-3 py-1.5 rounded-lg border border-neutral-700 hover:text-white">نموذج: انتهاء حدث</button>
+             </div>
+           </div>
+         </div>
       )}
 
       {toast && <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold text-sm bg-green-600 text-white z-50">{toast}</div>}

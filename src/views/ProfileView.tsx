@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { History, Coins, Trophy, Flame, Users, LogOut, Crown } from 'lucide-react';
+import { History, Coins, Trophy, Flame, Users, LogOut, Crown, Shield, Zap } from 'lucide-react';
 import { getUserHistory } from '../services/api';
 import { signOut, buyVip } from '../lib/firebase';
 
@@ -25,6 +25,8 @@ export const ProfileView = ({ user, points, setRefreshPoints }: any) => {
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
                 {user.name} 
                 {user.role === 'admin' && <span className="bg-red-500 text-xs px-2 py-1 rounded text-white">مدير</span>}
+                {user.hasShield && <Shield className="w-5 h-5 text-blue-400" />}
+                {user.hasPromoteBadge && <Zap className="w-5 h-5 text-purple-400" />}
             </h2>
             <p className="text-neutral-400 mb-2">{user.email}</p>
             

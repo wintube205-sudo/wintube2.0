@@ -1,10 +1,19 @@
 import { db } from '../lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, runTransaction, where } from 'firebase/firestore';
 
 export async function submitWithdrawal(uid: string, userName: string, method: string, amount: number, points: number, account: string) {
   try {
     let success = false;
     let errorMsg = "";
+
+    // Anti-Cheat: Enforce withdrawal cooldown
+    const lastWithdrawals = await getUserWithdrawals(uid);
+    if (lastWithdrawals.length > 0) {
+      const lastWTime = lastWithdrawals[0].createdAt?.toMillis?.() || 0;
+      if (Date.now() - lastWTime < 24 * 60 * 60 * 1000) {
+         throw new Error("يمكنك تقديم طلب سحب واحد كل 24 ساعة.");
+      }
+    }
     
     await runTransaction(db, async (transaction) => {
       const userRef = doc(db, 'users', uid);
@@ -43,6 +52,16 @@ export async function submitWithdrawal(uid: string, userName: string, method: st
   }
 }
 
+export async function getUserWithdrawals(uid: string) {
+  const q = query(
+    collection(db, 'withdrawals'),
+    where('userId', '==', uid)
+  );
+  const snap = await getDocs(q);
+  const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as any);
+  return data.sort((a: any, b: any) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+}
+
 export async function getLeaderboard(currentUid: string | null) {
   const usersRef = collection(db, 'users');
   const q = query(usersRef, orderBy('points', 'desc'), limit(10));
@@ -52,7 +71,25 @@ export async function getLeaderboard(currentUid: string | null) {
     id: doc.id,
     name: doc.data().name,
     points: doc.data().points,
-    isVip: doc.data().role === 'admin',
+    isVip: doc.data().isVIP || doc.data().role === 'admin',
+    hasShield: doc.data().hasShield,
+    hasPromoteBadge: doc.data().hasPromoteBadge,
+    isCurrentUser: doc.id === currentUid
+  }));
+  return leaders;
+}
+
+export async function getTopReferrals(currentUid: string | null) {
+  const usersRef = collection(db, 'users');
+  const q = query(usersRef, orderBy('referralCount', 'desc'), limit(10));
+  const snap = await getDocs(q);
+  
+  const leaders = snap.docs.map(doc => ({
+    id: doc.id,
+    name: doc.data().name,
+    referralCount: doc.data().referralCount || 0,
+    referralsEarnings: doc.data().referralsEarnings || 0,
+    isVip: doc.data().isVIP || doc.data().role === 'admin',
     isCurrentUser: doc.id === currentUid
   }));
   return leaders;

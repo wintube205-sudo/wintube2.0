@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Gamepad2, X } from 'lucide-react';
 import { updatePoints, incrementDailyProgress } from '../lib/firebase';
-import { collection, getDocs, query, limit } from 'firebase/firestore';
+import { collection, getDocs, query, limit, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { AdBanner } from '../components/AdBanner';
 import { NativeAdBanner } from '../components/NativeAdBanner';
@@ -18,17 +18,45 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
   const [isClaiming, setIsClaiming] = useState(false);
   const [pointReady, setPointReady] = useState(false);
   const [arcadeGames, setArcadeGames] = useState<any[]>([]);
+  const [watchStartTime, setWatchStartTime] = useState<number>(0);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    getDocs(query(collection(db, 'games'), limit(20))).then(snap => {
-         setArcadeGames(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-     });
+    const fetchGames = async () => {
+      try {
+        const snap = await getDocs(query(collection(db, 'games'), limit(20)));
+        const defaultGames = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        const userSnap = await getDocs(query(collection(db, 'user_content'), where('type', '==', 'game'), limit(15)));
+        const userGames = userSnap.docs.map(d => ({ id: d.id, isUserContent: true, ...d.data() }));
+
+        setArcadeGames([...userGames, ...defaultGames]);
+      } catch (e) { console.error(e) }
+    };
+    fetchGames();
   }, []);
 
   const requestGamePointFromServer = useCallback(async () => {
     if (isClaiming || !pointReady || !user) return;
+
+    // Anti-Cheat: Validate true play time (at least 30 seconds)
+    if (!watchStartTime) {
+        setToast('❌ أكتشف النظام محاولة غش (عدم لعب اللعبة). تم إبطال النقطة.');
+        setPlayingArcadeGame(null);
+        setPointReady(false);
+        return;
+    }
+    const timeElapsed = Date.now() - watchStartTime;
+    if (timeElapsed < 29000) {
+        setToast('❌ أكتشف النظام محاولة غش (تخطي الوقت). تم إبطال النقطة.');
+        setPlayingArcadeGame(null);
+        setPointReady(false);
+        return;
+    }
+
+    setWatchStartTime(0); // Reset for next game
+
     setIsClaiming(true);
     try {
       const baseReward = settings?.gamePoints || 5;
@@ -36,6 +64,17 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
       const response = await updatePoints(user.id, reward, 'لعب لعبة تسلية', 'earn');
       if (response.success) {
         await incrementDailyProgress(user.id, 'game');
+
+        // Reward Uploader
+        if (playingArcadeGame?.isUserContent && playingArcadeGame?.uploaderId && playingArcadeGame?.uploaderId !== user.id) {
+           const { increment, doc, updateDoc } = await import('firebase/firestore');
+           const { db } = await import('../lib/firebase');
+           try {
+               await updatePoints(playingArcadeGame.uploaderId, 5, `أرباح لعب المستخدمين للعبتك: ${playingArcadeGame.title}`, 'earn');
+               await updateDoc(doc(db, 'user_content', playingArcadeGame.id), { views: increment(1) });
+           } catch(e) { console.error(e) }
+        }
+
         setRefreshPoints((prev: number) => prev + 1);
         setToast(`+ مكافأة ${reward} نقطة!`); 
         setPointReady(false); 
@@ -147,7 +186,7 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">✨ ألعاب مميزة</h3>
               <div className="flex gap-4 overflow-x-auto pb-4 snap-x min-h-[250px] hide-scrollbar">
                 {arcadeGames.filter(g => g.isFeatured).map((game) => (
-                  <div key={game.id} onClick={() => { setPlayingArcadeGame(game); setTimeLeft(30); setPointReady(false); }} className="snap-center shrink-0 w-80 relative rounded-3xl overflow-hidden cursor-pointer group border border-neutral-800 hover:border-amber-500 transition-colors">
+                  <div key={game.id} onClick={() => { setPlayingArcadeGame(game); setTimeLeft(30); setPointReady(false); setWatchStartTime(Date.now()); }} className="snap-center shrink-0 w-80 relative rounded-3xl overflow-hidden cursor-pointer group border border-neutral-800 hover:border-amber-500 transition-colors">
                     <img src={game.thumbnail} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e: any) => { e.target.src = 'https://via.placeholder.com/400x250?text=Game'; }} alt={game.title} />
                     <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent"></div>
                     <div className="absolute bottom-0 left-0 p-6 w-full">
@@ -170,8 +209,17 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
           <h3 className="text-lg font-bold text-white mb-4">كل الألعاب</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {arcadeGames.length === 0 ? <p className="col-span-full text-center py-10 text-neutral-500">جاري تحميل الألعاب...</p> : arcadeGames.map((game) => (
-              <div key={game.id} onClick={() => { setPlayingArcadeGame(game); setTimeLeft(30); setPointReady(false); }} className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden cursor-pointer hover:border-blue-500 group transition-colors">
-                <div className="aspect-square bg-neutral-950 relative overflow-hidden"><img src={game.thumbnail} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" onError={(e: any) => { e.target.src = 'https://via.placeholder.com/150?text=Game'; }} alt={game.title} /></div>
+              <div key={game.id} onClick={() => { setPlayingArcadeGame(game); setTimeLeft(30); setPointReady(false); setWatchStartTime(Date.now()); }} className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden cursor-pointer hover:border-blue-500 group transition-colors relative">
+                {game.isUserContent && (
+                   <div className="absolute top-2 left-2 z-10 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow">محتوى مستخدم</div>
+                )}
+                <div className="aspect-square bg-neutral-950 relative overflow-hidden flex items-center justify-center">
+                   {game.thumbnail ? (
+                     <img src={game.thumbnail} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" onError={(e: any) => { e.target.src = 'https://via.placeholder.com/150?text=Game'; }} alt={game.title} />
+                   ) : (
+                     <Gamepad2 size={40} className="text-neutral-600" />
+                   )}
+                </div>
                 <div className="p-3 border-t border-neutral-800"><h3 className="font-bold text-white text-sm truncate">{game.title}</h3></div>
               </div>
             ))}
