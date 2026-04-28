@@ -55,7 +55,7 @@ export const AnalyticsDashboard = () => {
                    {loading ? <Loader2 className="animate-spin text-neutral-500 mx-auto py-10" /> : (
                        Object.keys(exitCounts).length > 0 ? (
                            <div className="space-y-3">
-                               {Object.entries(exitCounts).sort((a,b) => b[1] - a[1]).map(([path, count]) => (
+                               {Object.entries(exitCounts).sort((a,b) => (b[1] as number) - (a[1] as number)).map(([path, count]) => (
                                    <div key={path} className="flex justify-between items-center bg-neutral-950 p-3 rounded-xl border border-neutral-800">
                                        <span className="text-neutral-300 font-mono text-sm">{path}</span>
                                        <span className="bg-red-500/20 text-red-500 px-3 py-1 rounded-lg text-sm font-bold">{count} خروج</span>

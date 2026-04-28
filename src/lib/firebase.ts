@@ -628,6 +628,8 @@ export async function incrementDailyProgress(uid: string, type: 'video' | 'game'
     
     await runTransaction(db, async (t) => {
       const statSnap = await t.get(statRef);
+      const userSnap = await t.get(userRef);
+      
       if (!statSnap.exists()) {
         t.set(statRef, {
           videosWatched: type === 'video' ? 1 : 0,
@@ -646,7 +648,6 @@ export async function incrementDailyProgress(uid: string, type: 'video' | 'game'
       }
 
       // Also increment weekly, monthly, and lifetime stats directly on user doc
-      const userSnap = await t.get(userRef);
       if (userSnap.exists()) {
          const userData = userSnap.data();
          const updates: any = {};
