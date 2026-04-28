@@ -168,8 +168,8 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
                  <div className="absolute top-2 left-2 z-10 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow">محتوى مستخدم</div>
               )}
               <div className="relative aspect-video overflow-hidden bg-neutral-800 flex items-center justify-center">
-                {vid.thumbnail_360_url ? (
-                   <img src={vid.thumbnail_360_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Video thumbnail" />
+                {vid.thumbnail_360_url || vid.thumbnail ? (
+                   <img src={vid.thumbnail_360_url || vid.thumbnail} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Video thumbnail" />
                 ) : (
                    <Play size={40} className="text-neutral-600" />
                 )}

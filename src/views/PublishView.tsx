@@ -41,18 +41,26 @@ export const PublishView = ({ user }: any) => {
     setLoading(true);
     try {
       let embedUrl = url;
+      let thumbnailUrl = '';
       // Auto-convert youtube links to embed
       if (url.includes('youtube.com/watch')) {
           const vId = new URL(url).searchParams.get('v');
-          if (vId) embedUrl = `https://www.youtube.com/embed/${vId}`;
+          if (vId) {
+              embedUrl = `https://www.youtube.com/embed/${vId}`;
+              thumbnailUrl = `https://img.youtube.com/vi/${vId}/hqdefault.jpg`;
+          }
       } else if (url.includes('youtu.be/')) {
           const vId = url.split('youtu.be/')[1].split('?')[0];
-          if (vId) embedUrl = `https://www.youtube.com/embed/${vId}`;
+          if (vId) {
+              embedUrl = `https://www.youtube.com/embed/${vId}`;
+              thumbnailUrl = `https://img.youtube.com/vi/${vId}/hqdefault.jpg`;
+          }
       }
       
       await addDoc(collection(db, 'user_content'), {
         title,
         url: embedUrl,
+        thumbnail: thumbnailUrl,
         type,
         uploaderId: user.id,
         uploaderName: user.name,
@@ -169,9 +177,15 @@ export const PublishView = ({ user }: any) => {
               myContent.map((item, idx) => (
                 <div key={idx} className="bg-neutral-950 border border-neutral-800 p-4 rounded-2xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="bg-neutral-900 p-2 rounded-lg">
-                      {item.type === 'video' ? <Video className="text-red-500" size={20} /> : <Gamepad2 className="text-purple-500" size={20} />}
-                    </div>
+                    {item.thumbnail ? (
+                      <div className="w-16 h-12 rounded-lg overflow-hidden shrink-0">
+                        <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="bg-neutral-900 p-2 rounded-lg">
+                        {item.type === 'video' ? <Video className="text-red-500" size={20} /> : <Gamepad2 className="text-purple-500" size={20} />}
+                      </div>
+                    )}
                     <div>
                       <div className="text-white font-bold max-w-[200px] truncate">{item.title}</div>
                       <div className="text-neutral-500 text-xs">
