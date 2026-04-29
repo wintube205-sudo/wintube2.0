@@ -63,7 +63,7 @@ export const OffersView = ({ user }: any) => {
       try {
         // Direct fetch from MyLead API. Note: If CORS issue occurs, a backend proxy is required (e.g. Firebase Functions).
         // Since we are frontend only, we attempt a direct fetch.
-        const response = await fetch('https://mylead.global/api/v1/campaigns', {
+        const response = await fetch('https://api.mylead.eu/api/external/v1/campaigns', {
            headers: {
              'Authorization': `Bearer ${myleadToken}`,
              'Accept': 'application/json'
@@ -202,7 +202,7 @@ export const OffersView = ({ user }: any) => {
                   return (
                     <div 
                       key={offer.id || offer.campaign_id} 
-                      onClick={() => handleOpenOffer({ offerlink: offer.url || offer.tracking_url || `https://mylead.global/api/v1/campaign/${offer.id}/url` })}
+                      onClick={() => handleOpenOffer({ offerlink: offer.url || offer.tracking_url || `https://api.mylead.eu/api/external/v1/campaign/${offer.id}/url` })}
                       className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex items-center gap-4 hover:border-purple-500 transition-all cursor-pointer group"
                     >
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-800 flex-shrink-0">
