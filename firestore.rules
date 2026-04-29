@@ -145,9 +145,24 @@ service cloud.firestore {
       allow read, delete: if isAdmin();
     }
 
+    match /support_tickets/{ticketId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isSignedIn() &&
+         incoming().userId == request.auth.uid &&
+         incoming().keys().hasAll(['userId', 'userName', 'userEmail', 'subject', 'message', 'status', 'createdAt']);
+    }
+
+    match /platform_ratings/{ratingId} {
+      allow read: if true;
+      allow update, delete: if isAdmin();
+      allow create: if isSignedIn() &&
+         incoming().userId == request.auth.uid &&
+         incoming().keys().hasAll(['userId', 'userName', 'rating', 'message', 'createdAt']);
+    }
+
     match /withdrawals/{withdrawalId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid) || resource.data.status == 'approved';
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid) || resource.data.status == 'approved';
       allow create: if isSignedIn() &&
          incoming().keys().hasAll(['userId', 'userName', 'method', 'account', 'amount', 'points', 'status', 'createdAt']) &&
          incoming().userId == request.auth.uid &&

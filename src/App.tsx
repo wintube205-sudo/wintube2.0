@@ -15,6 +15,8 @@ import { RewardsView } from './views/RewardsView';
 import { ProfileView } from './views/ProfileView';
 import { AdminView } from './views/AdminView';
 import { LegalView } from './views/LegalView';
+import { ProofsView } from './views/ProofsView';
+import { SupportView } from './views/SupportView';
 
 import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail, db, checkVPNAndProxy, recordAffiliateClick } from './lib/firebase';
 import { onAuthStateChanged, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
@@ -351,12 +353,14 @@ const App = () => {
         {activeTab === 'referrals' && <ReferralsView user={user} />}
         {activeTab === 'leaderboard' && <LeaderboardView user={user} points={points} />}
         {activeTab === 'rewards' && <RewardsView points={points} setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
+        {activeTab === 'proofs' && <ProofsView />}
+        {activeTab === 'support' && <SupportView user={user} />}
         {activeTab === 'profile' && <ProfileView points={points} user={user} setRefreshPoints={setRefreshPoints} />}
         {activeTab === 'admin' && <AdminView user={user} onSettingsUpdated={setSettings} />}
         
         {activeTab === 'terms' && <LegalView type="terms" />}
         {activeTab === 'privacy' && <LegalView type="privacy" />}
-        {activeTab === 'contact' && <LegalView type="contact" />}
+        {activeTab === 'contact' && <SupportView user={user} />}
 
         <footer className="mt-auto pt-16 pb-4 border-t border-neutral-900/50 flex flex-wrap justify-center gap-6 text-sm text-neutral-500 font-bold">
           <button onClick={() => setActiveTab('terms')} className="hover:text-red-500 transition-colors">شروط الاستخدام</button>

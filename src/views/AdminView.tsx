@@ -20,6 +20,8 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
 
   const [apiKeys, setApiKeys] = useState<any[]>([]);
   const [newApiName, setNewApiName] = useState('');
+  const [supportTickets, setSupportTickets] = useState<any[]>([]);
+  const [platformRatings, setPlatformRatings] = useState<any[]>([]);
 
   const loadData = useCallback(() => {
     setLoading(true);
@@ -55,6 +57,19 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
       getDocs(collection(db, 'api_keys')).then(snap => {
          setApiKeys(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       }).catch(e => console.error("Could not load API keys", e));
+      
+      getDocs(collection(db, 'support_tickets')).then(snap => {
+         const tickets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+         // Sort by created at mostly
+         tickets.sort((a: any, b: any) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+         setSupportTickets(tickets);
+      }).catch(e => console.error("Could not load Support Tickets", e));
+      
+      getDocs(collection(db, 'platform_ratings')).then(snap => {
+         const ratings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+         ratings.sort((a: any, b: any) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+         setPlatformRatings(ratings);
+      }).catch(e => console.error("Could not load Platform Ratings", e));
     });
   }, [onSettingsUpdated]);
 
@@ -86,6 +101,17 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
      } catch(err: any) {
        showToast('خطأ: ' + err.message);
      }
+  };
+
+  const updateTicketStatus = async (ticketId: string, status: string) => {
+      try {
+          const { updateDoc, doc } = await import('firebase/firestore');
+          await updateDoc(doc(db, 'support_tickets', ticketId), { status });
+          setSupportTickets(supportTickets.map(t => t.id === ticketId ? { ...t, status } : t));
+          showToast('تم تحديث حالة التذكرة');
+      } catch (e: any) {
+          showToast('خطأ: ' + e.message);
+      }
   };
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -181,6 +207,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
           <button onClick={() => setActiveAdminTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'notifications' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Bell size={16}/> الإشعارات</button>
           <button onClick={() => setActiveAdminTab('analytics')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'analytics' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>التحليلات</button>
           <button onClick={() => setActiveAdminTab('api_keys')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'api_keys' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>منصة API</button>
+          <button onClick={() => setActiveAdminTab('support_tickets')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'support_tickets' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الدعم الفني</button>
         </div>
       </div>
 
@@ -533,6 +560,80 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                      <p className="text-neutral-500 mt-2 text-xs">Headers: X-API-Key: your_key</p>
                   </div>
               </div>
+           </div>
+         </div>
+      )}
+
+      {activeAdminTab === 'support_tickets' && (
+         <div className="animate-in fade-in space-y-8">
+           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8">
+             <h3 className="text-xl font-bold text-white mb-6">تذاكر الدعم الفني</h3>
+             <div className="space-y-4">
+                 {supportTickets.length === 0 ? (
+                     <div className="text-center text-neutral-500 py-10 font-bold border border-dashed border-neutral-800 rounded-2xl">
+                         لا توجد تذاكر دعم فني حالياً
+                     </div>
+                 ) : supportTickets.map(ticket => (
+                     <div key={ticket.id} className="bg-neutral-950 border border-neutral-800 p-6 rounded-2xl">
+                         <div className="flex justify-between items-start mb-4">
+                             <div>
+                                 <h4 className="text-lg font-bold text-white mb-1">{ticket.subject}</h4>
+                                 <p className="text-sm text-neutral-400">بواسطة: {ticket.userName} ({ticket.userEmail})</p>
+                                 <p className="text-xs text-neutral-500 mt-1">{new Date(ticket.createdAt?.toMillis?.() || Date.now()).toLocaleString('ar-EG')}</p>
+                             </div>
+                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${ticket.status === 'open' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/50' : 'bg-neutral-800 text-neutral-400'}`}>
+                                 {ticket.status === 'open' ? 'مفتوحة' : 'مغلقة'}
+                             </span>
+                         </div>
+                         <div className="bg-neutral-900 p-4 rounded-xl text-neutral-300 mb-4 whitespace-pre-wrap">
+                             {ticket.message}
+                         </div>
+                         <div className="flex gap-2">
+                             {ticket.status === 'open' ? (
+                                 <button onClick={() => updateTicketStatus(ticket.id, 'closed')} className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">إغلاق التذكرة</button>
+                             ) : (
+                                 <button onClick={() => updateTicketStatus(ticket.id, 'open')} className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">إعادة فتح</button>
+                             )}
+                             <a href={`mailto:${ticket.userEmail}?subject=Re: ${ticket.subject}`} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
+                                رد عبر الإيميل
+                             </a>
+                         </div>
+                     </div>
+                 ))}
+             </div>
+           </div>
+
+           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8">
+             <div className="flex items-center gap-2 mb-6">
+                 <h3 className="text-xl font-bold text-white">تقييمات المنصة</h3>
+                 <span className="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-full text-sm font-bold border border-amber-500/20">{platformRatings.length} تقييم</span>
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {platformRatings.length === 0 ? (
+                      <div className="text-center text-neutral-500 py-10 font-bold border border-dashed border-neutral-800 rounded-2xl col-span-2">
+                          لا توجد تقييمات حالياً
+                      </div>
+                 ) : platformRatings.map(rating => (
+                     <div key={rating.id} className="bg-neutral-950 border border-neutral-800 p-6 rounded-2xl flex flex-col justify-between">
+                         <div>
+                             <div className="flex justify-between items-start mb-3">
+                                 <div>
+                                     <h4 className="font-bold text-white mb-1">{rating.userName}</h4>
+                                     <p className="text-xs text-neutral-500">{new Date(rating.createdAt?.toMillis?.() || Date.now()).toLocaleDateString('ar-EG')}</p>
+                                 </div>
+                                 <div className="flex text-amber-500">
+                                     {Array.from({ length: 5 }).map((_, i) => (
+                                         <svg key={i} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={i < rating.rating ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={i < rating.rating ? "text-amber-500" : "text-neutral-700"}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                     ))}
+                                 </div>
+                             </div>
+                             {rating.message && (
+                                 <p className="text-sm text-neutral-300 italic bg-neutral-900 p-3 rounded-lg border border-neutral-800/50">"{rating.message}"</p>
+                             )}
+                         </div>
+                     </div>
+                 ))}
+             </div>
            </div>
          </div>
       )}

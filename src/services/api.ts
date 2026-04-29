@@ -52,6 +52,22 @@ export async function submitWithdrawal(uid: string, userName: string, method: st
   }
 }
 
+export async function getRecentProofs() {
+  const q = query(
+    collection(db, 'withdrawals'),
+    where('status', '==', 'approved'),
+    limit(20)
+  );
+  try {
+    const snap = await getDocs(q);
+    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as any);
+    return data.sort((a: any, b: any) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+}
+
 export async function getUserWithdrawals(uid: string) {
   const q = query(
     collection(db, 'withdrawals'),
