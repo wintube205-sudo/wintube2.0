@@ -6,8 +6,11 @@ import { doc, getDoc } from 'firebase/firestore';
 export const OffersView = ({ user }: any) => {
   const [activeWall, setActiveWall] = useState<any>(null);
   const [nativeOffers, setNativeOffers] = useState<any[]>([]);
+  const [myLeadOffers, setMyLeadOffers] = useState<any[]>([]);
   const [loadingOffers, setLoadingOffers] = useState(false);
+  const [loadingMyLead, setLoadingMyLead] = useState(false);
   const [pointsPerDollar, setPointsPerDollar] = useState(1000);
+  const [myleadToken, setMyleadToken] = useState('');
 
   useEffect(() => {
     // Fetch global settings to get points exchange rate
@@ -16,6 +19,7 @@ export const OffersView = ({ user }: any) => {
         const settingsSnap = await getDoc(doc(db, 'settings', 'global'));
         if (settingsSnap.exists()) {
           setPointsPerDollar(settingsSnap.data().pointsPerDollar || 1000);
+          setMyleadToken(settingsSnap.data().myleadToken || '');
         }
       } catch (err) {
         console.error("Error fetching settings:", err);
@@ -49,6 +53,39 @@ export const OffersView = ({ user }: any) => {
 
     fetchCpaGripOffers();
   }, [user]);
+
+  useEffect(() => {
+    if (!myleadToken) return;
+
+    // Fetch MyLead offers
+    const fetchMyLeadOffers = async () => {
+      setLoadingMyLead(true);
+      try {
+        // Direct fetch from MyLead API. Note: If CORS issue occurs, a backend proxy is required (e.g. Firebase Functions).
+        // Since we are frontend only, we attempt a direct fetch.
+        const response = await fetch('https://mylead.global/api/v1/campaigns', {
+           headers: {
+             'Authorization': `Bearer ${myleadToken}`,
+             'Accept': 'application/json'
+           }
+        });
+        const data = await response.json();
+        
+        // MyLead API wraps response in `data`
+        if (data && data.data && Array.isArray(data.data)) {
+           setMyLeadOffers(data.data);
+        } else if (data && data.campaigns) {
+           setMyLeadOffers(data.campaigns);
+        }
+      } catch (err) {
+        console.error("Error fetching MyLead offers:", err);
+      } finally {
+        setLoadingMyLead(false);
+      }
+    };
+
+    fetchMyLeadOffers();
+  }, [myleadToken]);
 
   // روابط جدران العروض
   const providers = [
@@ -144,6 +181,55 @@ export const OffersView = ({ user }: any) => {
           </div>
         )}
       </div>
+
+      {/* MyLead Native Offers */}
+      {myleadToken && (
+        <div className="mb-10">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <Briefcase className="text-purple-500" size={20} />
+            مهام وعروض MyLead الحصرية
+          </h3>
+          
+          {loadingMyLead ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="animate-spin text-purple-500" size={32} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {myLeadOffers.length > 0 ? (
+                myLeadOffers.slice(0, 20).map((offer: any) => {
+                  const points = Math.floor(parseFloat(offer.rate || offer.payout || 0) * pointsPerDollar);
+                  return (
+                    <div 
+                      key={offer.id || offer.campaign_id} 
+                      onClick={() => handleOpenOffer({ offerlink: offer.url || offer.tracking_url || `https://mylead.global/api/v1/campaign/${offer.id}/url` })}
+                      className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex items-center gap-4 hover:border-purple-500 transition-all cursor-pointer group"
+                    >
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-800 flex-shrink-0">
+                        <img src={offer.image_url || offer.logo || 'https://via.placeholder.com/64?text=MyLead'} alt={offer.name} className="w-full h-full object-cover" onError={(e: any) => e.target.src = 'https://via.placeholder.com/64?text=Offer'} />
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <h4 className="font-bold text-white text-sm sm:text-base truncate">{offer.name || offer.title}</h4>
+                        <p className="text-xs text-neutral-400 truncate">{offer.description || offer.category_name || 'عرض'}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="bg-purple-600 text-white px-3 py-1 rounded-lg text-xs font-black">
+                          +{points > 0 ? points.toLocaleString() : '؟؟؟'} نقطة
+                        </div>
+                        <ChevronRight size={16} className="text-neutral-600 group-hover:text-purple-500 transition-colors" />
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-10 bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-800 text-neutral-500">
+                  لا توجد عروض متاحة لـ MyLead حالياً.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <h3 className="text-lg font-bold text-white mb-4">شركات العروض الأخرى</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

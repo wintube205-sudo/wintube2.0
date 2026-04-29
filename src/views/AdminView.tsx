@@ -15,7 +15,8 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [settingsForm, setSettingsForm] = useState<any>({ 
     videoPoints: 0, gamePoints: 0, minWithdrawal: 0, pointsPerDollar: 1000,
     taskRewardLogin: 0, taskTargetVideos: 0, taskRewardVideos: 0, taskTargetGames: 0, taskRewardGames: 0,
-    eventMode: false
+    eventMode: false,
+    myleadToken: ''
   });
 
   const [apiKeys, setApiKeys] = useState<any[]>([]);
@@ -40,7 +41,8 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
           taskRewardVideos: res.settings.taskRewardVideos || 0,
           taskTargetGames: res.settings.taskTargetGames || 0,
           taskRewardGames: res.settings.taskRewardGames || 0,
-          eventMode: res.settings.eventMode || false
+          eventMode: res.settings.eventMode || false,
+          myleadToken: res.settings.myleadToken || ''
         });
         if (onSettingsUpdated) onSettingsUpdated(res.settings);
       }
@@ -404,6 +406,21 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                    </div>
                 </div>
                 
+                 <div className="mt-8 space-y-4 pt-8 border-t border-neutral-800">
+                   <h3 className="text-xl font-bold text-white flex items-center gap-2"><Settings className="text-purple-500" /> إعدادات الشركات الوسيطة (MyLead)</h3>
+                   <div className="space-y-2">
+                       <label className="text-neutral-400 text-sm font-bold block">MyLead API Token</label>
+                       <input 
+                           type="text" 
+                           value={settingsForm.myleadToken || ''} 
+                           onChange={e => setSettingsForm({...settingsForm, myleadToken: e.target.value})}
+                           placeholder="أدخل رمز الناشر (API Token)"
+                           className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-white font-mono focus:border-red-500 transition-colors" 
+                       />
+                       <p className="text-xs text-neutral-500 mt-1">ضروري لجلب وعرض عروض MyLead تلقائياً داخل المنصة عبر الواجهة البرمجية.</p>
+                   </div>
+                 </div>
+
                  <div className="mt-8 flex items-center p-4 bg-neutral-950 border border-neutral-800 rounded-xl gap-4">
                     <input 
                        type="checkbox" 
