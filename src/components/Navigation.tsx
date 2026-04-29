@@ -42,6 +42,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isOpen, isMobile, onCloseSide
     { id: 'videos', icon: Play, label: 'الفيديوهات' },
     { id: 'publish', icon: Upload, label: 'نشر محتوى' },
     { id: 'offers', icon: Briefcase, label: 'جدار العروض', badge: 'جديد' },
+    { id: 'real_offers', icon: ShieldCheck, label: 'عروض حقيقية', badge: 'موثوق' },
     { id: 'market', icon: ShoppingCart, label: 'المتجر' },
     { id: 'events', icon: Flame, label: 'الفعاليات', badge: 'مضاعف' },
     { id: 'earn', icon: Flame, label: 'المهام اليومية' },
@@ -92,7 +93,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isOpen, isMobile, onCloseSide
 };
 
 export const BottomNav = ({ activeTab, setActiveTab }: any) => {
-  const navItems = [{ id: 'home', icon: Play, label: 'الرئيسية' }, { id: 'offers', icon: Briefcase, label: 'عروض' }, { id: 'games', icon: Gamepad2, label: 'ألعاب' }, { id: 'rewards', icon: Wallet, label: 'سحب' }, { id: 'profile', icon: User, label: 'حسابي' }];
+  const navItems = [{ id: 'home', icon: Play, label: 'الرئيسية' }, { id: 'real_offers', icon: ShieldCheck, label: 'تطبيقات' }, { id: 'offers', icon: Briefcase, label: 'نقاط' }, { id: 'rewards', icon: Wallet, label: 'سحب' }, { id: 'profile', icon: User, label: 'حسابي' }];
   return (
     <nav className="md:hidden fixed bottom-0 w-full bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-800 z-40 pb-safe">
       <div className="flex justify-around items-center h-16">

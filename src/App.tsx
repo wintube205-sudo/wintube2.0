@@ -3,6 +3,7 @@ import { Header, Sidebar, BottomNav } from './components/Navigation';
 import { HomeView } from './views/HomeView';
 import { VideosView } from './views/VideosView';
 import { OffersView } from './views/OffersView';
+import { RealOffersView } from './views/RealOffersView';
 import { EarnView } from './views/EarnView';
 import { GamesView } from './views/GamesView';
 import { AffiliateView } from './views/AffiliateView';
@@ -346,6 +347,7 @@ const App = () => {
         {activeTab === 'videos' && <VideosView setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
         {activeTab === 'publish' && <PublishView user={user} />}
         {activeTab === 'offers' && <OffersView user={user} setRefreshPoints={setRefreshPoints} />}
+        {activeTab === 'real_offers' && <RealOffersView user={user} setActiveTab={setActiveTab} />}
         {activeTab === 'market' && <MarketView user={user} points={points} setRefreshPoints={setRefreshPoints} />}
         {activeTab === 'earn' && <EarnView points={points} setRefreshPoints={setRefreshPoints} user={user} setActiveTab={setActiveTab} settings={settings} />}
         {activeTab === 'events' && <EventsView settings={settings} setActiveTab={setActiveTab} />}

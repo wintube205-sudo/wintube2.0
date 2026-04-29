@@ -29,6 +29,7 @@ export const HomeView = ({ setActiveTab }: any) => (
       <h2 className="text-2xl font-black text-white mb-6">طرق الربح المتاحة</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
+          { id: 'real_offers', title: 'عروض حقيقية', desc: 'مهام وتطبيقات موثوقة', icon: Briefcase, color: 'text-amber-500', bg: 'bg-amber-500/10' },
           { id: 'offers', title: 'جدار العروض', desc: 'اربح آلاف النقاط', icon: Briefcase, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
           { id: 'videos', title: 'شاهد الفيديوهات', desc: 'اربح نقطة كل 30 ثانية', icon: Play, color: 'text-red-500', bg: 'bg-red-500/10' },
           { id: 'games', title: 'العب واربح', desc: 'ألعاب محمية وعادلة', icon: Gamepad2, color: 'text-blue-500', bg: 'bg-blue-500/10' },
