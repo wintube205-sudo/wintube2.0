@@ -242,6 +242,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
           <button onClick={() => setActiveAdminTab('analytics')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'analytics' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>التحليلات</button>
           <button onClick={() => setActiveAdminTab('api_keys')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'api_keys' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>منصة API</button>
           <button onClick={() => setActiveAdminTab('support_tickets')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'support_tickets' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الدعم الفني</button>
+          <button onClick={() => setActiveAdminTab('vip_requests')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'vip_requests' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>طلبات VIP</button>
         </div>
       </div>
 
