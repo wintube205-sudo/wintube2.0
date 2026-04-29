@@ -658,6 +658,23 @@ export async function buyVip(uid: string, days: number, cost: number) {
   }
 }
 
+export async function submitVipRequest(uid: string, userName: string, method: string, amount: number, transactionId: string) {
+  try {
+    await addDoc(collection(db, 'vip_requests'), {
+      userId: uid,
+      userName,
+      method,
+      amount,
+      transactionId,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+    return { success: true };
+  } catch(e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
 export async function incrementDailyProgress(uid: string, type: 'video' | 'game') {
   try {
     const today = new Date().toISOString().split('T')[0];

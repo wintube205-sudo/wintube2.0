@@ -160,6 +160,14 @@ service cloud.firestore {
          incoming().keys().hasAll(['userId', 'userName', 'rating', 'message', 'createdAt']);
     }
 
+    match /vip_requests/{requestId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() &&
+         incoming().userId == request.auth.uid &&
+         incoming().keys().hasAll(['userId', 'userName', 'method', 'amount', 'status', 'createdAt', 'transactionId']);
+      allow update, delete: if isAdmin();
+    }
+
     match /withdrawals/{withdrawalId} {
       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid) || resource.data.status == 'approved';
       allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid) || resource.data.status == 'approved';

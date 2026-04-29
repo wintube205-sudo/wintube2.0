@@ -17,6 +17,7 @@ import { AdminView } from './views/AdminView';
 import { LegalView } from './views/LegalView';
 import { ProofsView } from './views/ProofsView';
 import { SupportView } from './views/SupportView';
+import { VIPView } from './views/VIPView';
 
 import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail, db, checkVPNAndProxy, recordAffiliateClick } from './lib/firebase';
 import { onAuthStateChanged, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
@@ -353,6 +354,7 @@ const App = () => {
         {activeTab === 'referrals' && <ReferralsView user={user} />}
         {activeTab === 'leaderboard' && <LeaderboardView user={user} points={points} />}
         {activeTab === 'rewards' && <RewardsView points={points} setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
+        {activeTab === 'vip' && <VIPView user={user} points={points} setRefreshPoints={setRefreshPoints} />}
         {activeTab === 'proofs' && <ProofsView />}
         {activeTab === 'support' && <SupportView user={user} />}
         {activeTab === 'profile' && <ProfileView points={points} user={user} setRefreshPoints={setRefreshPoints} />}

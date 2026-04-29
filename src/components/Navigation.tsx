@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Gamepad2, Briefcase, Trophy, User, LogIn, Menu, Wallet, Flame, Users, LayoutDashboard, ShieldCheck, Coins, Bell, LogOut, ShoppingCart, Upload, Megaphone, Star } from 'lucide-react';
+import { Play, Gamepad2, Briefcase, Trophy, User, LogIn, Menu, Wallet, Flame, Users, LayoutDashboard, ShieldCheck, Coins, Bell, LogOut, ShoppingCart, Upload, Megaphone, Star, Crown } from 'lucide-react';
 import { signOut } from '../lib/firebase';
 
 export const Header = ({ user, points, onOpenAuth, onToggleSidebar, setActiveTab, unreadNotifications = 0, onOpenNotifications }: any) => (
@@ -50,6 +50,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isOpen, isMobile, onCloseSide
     { id: 'referrals', icon: Users, label: 'دعوة الأصدقاء' },
     { id: 'leaderboard', icon: Trophy, label: 'المتصدرين' },
     { id: 'rewards', icon: Wallet, label: 'سحب الأرباح' },
+    { id: 'vip', icon: Crown, label: 'ترقية VIP', badge: 'مميز' },
     { id: 'proofs', icon: ShieldCheck, label: 'إثباتات السحب' },
     { id: 'support', icon: Star, label: 'الدعم والتقييم' },
   ];

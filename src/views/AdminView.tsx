@@ -22,6 +22,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [newApiName, setNewApiName] = useState('');
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
   const [platformRatings, setPlatformRatings] = useState<any[]>([]);
+  const [vipRequests, setVipRequests] = useState<any[]>([]);
 
   const loadData = useCallback(() => {
     setLoading(true);
@@ -70,6 +71,12 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
          ratings.sort((a: any, b: any) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
          setPlatformRatings(ratings);
       }).catch(e => console.error("Could not load Platform Ratings", e));
+
+      getDocs(collection(db, 'vip_requests')).then(snap => {
+         const requests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+         requests.sort((a: any, b: any) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+         setVipRequests(requests);
+      }).catch(e => console.error("Could not load VIP requests", e));
     });
   }, [onSettingsUpdated]);
 
@@ -109,6 +116,33 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
           await updateDoc(doc(db, 'support_tickets', ticketId), { status });
           setSupportTickets(supportTickets.map(t => t.id === ticketId ? { ...t, status } : t));
           showToast('تم تحديث حالة التذكرة');
+      } catch (e: any) {
+          showToast('خطأ: ' + e.message);
+      }
+  };
+
+  const handleVipRequest = async (requestId: string, userId: string, action: 'approved' | 'rejected') => {
+      try {
+          const { updateDoc, doc, serverTimestamp } = await import('firebase/firestore');
+          const batch: any[] = [];
+          
+          if (action === 'approved') {
+              // 10 years (Permanent)
+              const exp = new Date();
+              exp.setFullYear(exp.getFullYear() + 10);
+              
+              await updateDoc(doc(db, 'users', userId), {
+                  isVIP: true,
+                  vipExpiration: exp
+              });
+              
+              const { addNotification } = await import('../lib/firebase');
+              await addNotification(userId, 'تم تفعيل الـ VIP! 👑', 'مبروك! تم تفعيل اشتراكك الـ VIP الدائم بنجاح. استمتع بمضاعفة الأرباح!', 'reward');
+          }
+
+          await updateDoc(doc(db, 'vip_requests', requestId), { status: action });
+          setVipRequests(vipRequests.map(r => r.id === requestId ? { ...r, status: action } : r));
+          showToast(action === 'approved' ? 'تم تفعيل الـ VIP للمستخدم' : 'تم رفض الطلب');
       } catch (e: any) {
           showToast('خطأ: ' + e.message);
       }
@@ -631,6 +665,44 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                                  <p className="text-sm text-neutral-300 italic bg-neutral-900 p-3 rounded-lg border border-neutral-800/50">"{rating.message}"</p>
                              )}
                          </div>
+                     </div>
+                 ))}
+             </div>
+           </div>
+         </div>
+      )}
+
+      {activeAdminTab === 'vip_requests' && (
+         <div className="animate-in fade-in space-y-8">
+           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8">
+             <h3 className="text-xl font-bold text-white mb-6">طلبات ترقية VIP ($19)</h3>
+             <div className="space-y-4">
+                 {vipRequests.length === 0 ? (
+                     <div className="text-center text-neutral-500 py-10 font-bold border border-dashed border-neutral-800 rounded-2xl">
+                         لا توجد طلبات VIP حالياً
+                     </div>
+                 ) : vipRequests.map(req => (
+                     <div key={req.id} className="bg-neutral-950 border border-neutral-800 p-6 rounded-2xl">
+                         <div className="flex justify-between items-start mb-4">
+                             <div>
+                                 <h4 className="text-lg font-bold text-white mb-1">{req.userName}</h4>
+                                 <p className="text-sm text-neutral-400">الوسيلة: <span className="text-amber-500 font-bold">{req.method}</span></p>
+                                 <p className="text-xs text-neutral-500 mt-1">{new Date(req.createdAt?.toMillis?.() || Date.now()).toLocaleString('ar-EG')}</p>
+                             </div>
+                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${req.status === 'pending' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/50' : req.status === 'approved' ? 'bg-green-500/10 text-green-500 border border-green-500/50' : 'bg-red-500/10 text-red-500'}`}>
+                                 {req.status === 'pending' ? 'قيد المراجعة' : req.status === 'approved' ? 'تم التفعيل' : 'مرفوض'}
+                             </span>
+                         </div>
+                         <div className="bg-neutral-900 p-4 rounded-xl mb-4">
+                             <div className="text-xs text-neutral-500 mb-1">رقم العملية / تفاصيل التحويل:</div>
+                             <div className="text-white font-mono break-all">{req.transactionId}</div>
+                         </div>
+                         {req.status === 'pending' && (
+                             <div className="flex gap-2">
+                                 <button onClick={() => handleVipRequest(req.id, req.userId, 'approved')} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors">تفعيل VIP</button>
+                                 <button onClick={() => handleVipRequest(req.id, req.userId, 'rejected')} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors">رفض الطلب</button>
+                             </div>
+                         )}
                      </div>
                  ))}
              </div>
