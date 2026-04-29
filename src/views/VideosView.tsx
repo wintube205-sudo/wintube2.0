@@ -111,7 +111,7 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
       setIsClaiming(false); 
       setTimeout(() => setToast(''), 2000); 
     }
-  }, [isClaiming, pointReady, user, playingVideo, settings]);
+  }, [isClaiming, pointReady, user, playingVideo, settings, watchStartTime]);
 
   // 1. Timer Effect
   useEffect(() => {
