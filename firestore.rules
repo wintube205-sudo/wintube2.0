@@ -52,15 +52,15 @@ service cloud.firestore {
            request.auth.uid == userId &&
            isValidUserUpdate(incoming()) &&
            incoming().diff(existing()).affectedKeys().hasOnly(['points', 'lastVideoClaim', 'lastGameClaim', 'referralCount', 'referralsEarnings', 'level', 'streak', 'lastLoginClaim', 'name']) &&
-           incoming().role == existing().role &&
-           incoming().banned == existing().banned
+           incoming().role == existing().get('role', 'user') &&
+           incoming().banned == existing().get('banned', false)
         ) ||
         (
            // مسار السماح بتوزيع الأرباح على الدعوة (خارجي) - أو نسبة 20%
            isValidUserUpdate(incoming()) &&
            incoming().diff(existing()).affectedKeys().hasOnly(['points', 'referralCount', 'referralsEarnings']) &&
-           incoming().role == existing().role &&
-           incoming().banned == existing().banned &&
+           incoming().role == existing().get('role', 'user') &&
+           incoming().banned == existing().get('banned', false) &&
            ( // إما إضافة صديق جديد (+100) أو أرباح النشاط (20%)
              (
                incoming().points == existing().points + 100 &&
@@ -72,6 +72,19 @@ service cloud.firestore {
                incoming().get('referralsEarnings', 0) > existing().get('referralsEarnings', 0)
              )
            )
+        ) ||
+        (
+           // مسار السماح بتحويل النقاط بين اللاعبين (P2P)
+           request.auth.uid != userId &&
+           isValidUserUpdate(incoming()) &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['points']) &&
+           incoming().points > existing().points &&
+           incoming().role == existing().get('role', 'user') &&
+           incoming().banned == existing().get('banned', false) &&
+           (
+             getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.points <= 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.points - (incoming().points - existing().points)
+           )
         )
       );
 
@@ -79,7 +92,7 @@ service cloud.firestore {
         allow get: if isSignedIn() && request.auth.uid == userId;
         allow list: if isSignedIn() && request.auth.uid == userId;
         allow create: if isSignedIn() && 
-           (request.auth.uid == userId || (incoming().type == 'earn' && (incoming().title == 'مكافأة دعوة صديق' || incoming().title == 'أرباح إحالة 20% (من نشاط صديق)') && incoming().amount > 0)) && 
+           (isAdmin() || request.auth.uid == userId || (incoming().type == 'earn' && (incoming().title == 'مكافأة دعوة صديق' || incoming().title == 'أرباح إحالة 20% (من نشاط صديق)' || incoming().title == 'استلام نقاط من لاعب') && incoming().amount > 0)) && 
            incoming().keys().hasAll(['title', 'amount', 'type', 'createdAt']) &&
            incoming().title is string && incoming().title.size() <= 100 &&
            incoming().amount is number &&

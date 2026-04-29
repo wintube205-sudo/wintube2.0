@@ -33,7 +33,7 @@ export const RealOffersView = ({ user, setActiveTab }: any) => {
       // Fetch CPAGrip
       try {
         const userId = user?.id || 'guest';
-        const url = `https://www.cpagrip.com/common/offer_feed_json.php?user_id=2507811&pubkey=296f0c770b5322f24936b50aedcdb1b3&key=2e47a59b99cb8a12a2e766f783f4f1d2&tracking_id=${userId}`;
+        const url = `/api/proxy/cpagrip?user_id=2507811&pubkey=296f0c770b5322f24936b50aedcdb1b3&key=2e47a59b99cb8a12a2e766f783f4f1d2&tracking_id=${userId}`;
         const response = await fetch(url);
         const data = await response.json();
         if (data && data.offers) {
@@ -51,12 +51,7 @@ export const RealOffersView = ({ user, setActiveTab }: any) => {
       // Fetch MyLead
       if (myleadToken) {
         try {
-          const response = await fetch('https://api.mylead.eu/api/external/v1/campaigns', {
-             headers: {
-               'Authorization': `Bearer ${myleadToken}`,
-               'Accept': 'application/json'
-             }
-          });
+          const response = await fetch(`/api/proxy/mylead?token=${myleadToken}`);
           const data = await response.json();
           let myleadCampaigns = [];
           if (data && data.data && Array.isArray(data.data)) {

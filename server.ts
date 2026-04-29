@@ -41,6 +41,36 @@ async function startServer() {
     }
   };
 
+  // --- External Offers Proxy to avoid CORS ---
+  app.get("/api/proxy/cpagrip", async (req, res) => {
+    try {
+      const url = new URL('https://www.cpagrip.com/common/offer_feed_json.php');
+      Object.keys(req.query).forEach(key => url.searchParams.append(key, req.query[key] as string));
+      const response = await fetch(url.toString());
+      const data = await response.json();
+      res.json(data);
+    } catch(e) {
+      res.status(500).json({ error: "Failed to fetch offers" });
+    }
+  });
+
+  app.get("/api/proxy/mylead", async (req, res) => {
+    try {
+      const token = req.query.token;
+      if (!token) return res.status(400).json({ error: "No token provided" });
+      const response = await fetch('https://api.mylead.eu/api/external/v1/campaigns', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const data = await response.json();
+      res.json(data);
+    } catch(e) {
+      res.status(500).json({ error: "Failed to fetch offers" });
+    }
+  });
+
   // Get User Profile
   app.get("/api/v1/users/:id", authenticateApi, async (req, res) => {
     try {

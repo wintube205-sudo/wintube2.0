@@ -144,7 +144,8 @@ export async function getGlobalSettings() {
             taskRewardVideos: 200,
             taskTargetGames: 3,
             taskRewardGames: 150,
-            eventMode: false
+            eventMode: false,
+            myleadToken: ''
          };
          // We do not setDoc here automatically for regular users to avoid "Missing permissions"
          // AdminView will handle initialization/updates
@@ -163,7 +164,8 @@ export async function getGlobalSettings() {
           taskRewardVideos: 200,
           taskTargetGames: 3,
           taskRewardGames: 150,
-          eventMode: false
+          eventMode: false,
+          myleadToken: ''
       };
     }
 }
