@@ -11,7 +11,8 @@ export const AdminAICoach = ({ adminData }: any) => {
     setIsAnalyzing(true);
     setError(null);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const key = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
+      const ai = new GoogleGenAI({ apiKey: key || '' });
       
       const promptText = `
 أنت مستشار ذكي (AI Coach) لمنصة wintube.win المصممة لربح المال من الفيديوهات، الألعاب والعروض.

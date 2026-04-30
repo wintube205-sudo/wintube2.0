@@ -2,8 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export const GeminiChatbot = ({ user }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{role: 'user'|'model', text: string}[]>([
@@ -11,7 +9,17 @@ export const GeminiChatbot = ({ user }: any) => {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [aiError, setAiError] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const getAi = () => {
+    try {
+      const key = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
+      return new GoogleGenAI({ apiKey: key || '' });
+    } catch {
+      return null;
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,6 +46,13 @@ export const GeminiChatbot = ({ user }: any) => {
           parts: [{ text: m.text }]
       }));
       contents.push({ role: 'user', parts: [{ text: userMessage }] });
+
+      const ai = getAi();
+      if (!ai) {
+          setMessages(prev => [...prev, { role: 'model', text: 'عذراً لا تتوفر خدمة الذكاء الاصطناعي حالياً.' }]);
+          setIsTyping(false);
+          return;
+      }
 
       const response = await ai.models.generateContent({
           model: 'gemini-3.1-flash-lite-preview',
