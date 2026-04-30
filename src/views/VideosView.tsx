@@ -140,7 +140,7 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
     setVideoAnalysis(null);
     try {
         const { GoogleGenAI } = await import('@google/genai');
-        const key = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
+        const key = process.env.GEMINI_API_KEY || '';
         const ai = new GoogleGenAI({ apiKey: key || '' });
         const response = await ai.models.generateContent({
             model: 'gemini-3.1-flash-lite-preview',

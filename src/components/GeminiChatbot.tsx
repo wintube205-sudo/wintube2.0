@@ -14,7 +14,7 @@ export const GeminiChatbot = ({ user }: any) => {
 
   const getAi = () => {
     try {
-      const key = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
+      const key = process.env.GEMINI_API_KEY || '';
       return new GoogleGenAI({ apiKey: key || '' });
     } catch {
       return null;
