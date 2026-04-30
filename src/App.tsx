@@ -29,6 +29,8 @@ import { AdBanner } from './components/AdBanner';
 import { NativeAdBanner } from './components/NativeAdBanner';
 import { initAnalytics, setAnalyticsTab } from './services/AnalyticsService';
 
+import { GeminiChatbot } from './components/GeminiChatbot';
+
 const NotificationsModal = ({ isOpen, onClose, notifications, markAsRead }: any) => {
   if (!isOpen) return null;
   return (
@@ -395,6 +397,7 @@ const App = () => {
         notifications={notifications} 
         markAsRead={markAsRead} 
       />
+      <GeminiChatbot user={user} />
     </div>
   );
 };

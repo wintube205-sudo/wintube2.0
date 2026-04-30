@@ -84,7 +84,7 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
         setPointReady(false); 
       }
     } catch (err) { setToast('حدث خطأ'); } finally { setIsClaiming(false); setTimeout(() => setToast(''), 2000); }
-  }, [isClaiming, pointReady, user, settings]);
+  }, [isClaiming, pointReady, user, settings, watchStartTime]);
 
   useEffect(() => {
     let timer: any;

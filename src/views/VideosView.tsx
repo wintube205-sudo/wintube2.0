@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, EyeOff, Loader2, Gift, Clock, X, Search } from 'lucide-react';
+import { Play, EyeOff, Loader2, Gift, Clock, X, Search, Sparkles } from 'lucide-react';
 import { updatePoints, incrementDailyProgress } from '../lib/firebase';
 import { AdBanner } from '../components/AdBanner';
 import { NativeAdBanner } from '../components/NativeAdBanner';
@@ -14,6 +14,8 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
   const [pointReady, setPointReady] = useState(false); 
   const [searchQuery, setSearchQuery] = useState('');
   const [watchStartTime, setWatchStartTime] = useState<number>(0);
+  const [videoAnalysis, setVideoAnalysis] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const fetchVideos = useCallback(async (searchQueryRaw = '') => {
     setLoading(true);
@@ -35,8 +37,8 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
       }
 
       const endpoint = searchQueryRaw 
-        ? `https://api.dailymotion.com/videos?search=${encodeURIComponent(searchQueryRaw)}&limit=15&fields=id,title,thumbnail_360_url`
-        : `https://api.dailymotion.com/videos?channel=videogames&limit=15&fields=id,title,thumbnail_360_url`;
+        ? `https://api.dailymotion.com/videos?search=${encodeURIComponent(searchQueryRaw)}&limit=15&fields=id,title,description,thumbnail_360_url`
+        : `https://api.dailymotion.com/videos?channel=videogames&limit=15&fields=id,title,description,thumbnail_360_url`;
         
       const res = await fetch(endpoint);
       const data = await res.json();
@@ -132,6 +134,30 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
     return () => clearInterval(timer);
   }, [playingVideo, isClaiming, pointReady, user]);
 
+  const analyzeVideo = async () => {
+    if (!playingVideo) return;
+    setIsAnalyzing(true);
+    setVideoAnalysis(null);
+    try {
+        const { GoogleGenAI } = await import('@google/genai');
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-flash-lite-preview',
+            contents: `تحليل محتوى الفيديو التالي بناءً على عنوانه و وصفه: 
+العنوان: ${playingVideo.title}
+الوصف: ${playingVideo.description || 'غير متوفر'}`,
+            config: {
+                systemInstruction: 'أنت مساعد ذكي لمنصة وين تيوب. مهمتك تحليل الفيديوهات للمستخدم وإعطائه فكرة عامة حول ما يحتويه الفيديو بطريقة ممتعة ومختصرة باللغة العربية.'
+            }
+        });
+        setVideoAnalysis(response.text);
+    } catch(err) {
+        setVideoAnalysis("تعذر تحليل الفيديو في الوقت الحالي.");
+    } finally {
+        setIsAnalyzing(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto animate-in fade-in w-full" dir="rtl">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -205,7 +231,24 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
              <div className="w-full relative flex-grow max-h-[70vh]">
                 <iframe src={playingVideo.isUserContent ? playingVideo.url : `https://www.dailymotion.com/embed/video/${playingVideo.id}?autoplay=1&mute=0`} allowFullScreen className="w-full h-full aspect-video rounded-2xl shadow-2xl border border-neutral-800 bg-black relative z-0"></iframe>
              </div>
-             <div className="w-full mt-8">
+             <div className="w-full mt-8 flex flex-col gap-4">
+               <button 
+                  onClick={analyzeVideo} 
+                  disabled={isAnalyzing}
+                  className="self-start flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50"
+               >
+                 {isAnalyzing ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                 <span>تحليل الفيديو بالذكاء الاصطناعي</span>
+               </button>
+               {videoAnalysis && (
+                  <div className="bg-neutral-900 border border-purple-500/30 rounded-2xl p-6 shadow-xl relative mt-2">
+                     <div className="absolute -top-3 -right-3 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white p-2 rounded-full shadow-lg">
+                        <Sparkles size={16} />
+                     </div>
+                     <h3 className="font-bold text-white mb-2 text-lg">تحليل مستخلص:</h3>
+                     <p className="text-neutral-300 leading-relaxed whitespace-pre-wrap">{videoAnalysis}</p>
+                  </div>
+               )}
                {/* إعلانات */}
              </div>
           </div>

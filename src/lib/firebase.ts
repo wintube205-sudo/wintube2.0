@@ -405,10 +405,11 @@ export async function updatePoints(uid: string, pointsDelta: number, reason: str
       }
     });
     
-    await logHistory(uid, reason, pointsDelta, type);
+    const shortReason = reason.length > 90 ? reason.substring(0, 90) + '...' : reason;
+    await logHistory(uid, shortReason, pointsDelta, type);
 
     if (type === 'earn' && pointsDelta >= 500) {
-       await addNotification(uid, "ربح كبير! 🚀", `لقد حققت أرباحاً جيدة (${pointsDelta} نقطة) من ${reason}. استمر في التقدم! العب المزيد لمضاعفة أرباحك! 🤑`, 'reward');
+       await addNotification(uid, "ربح كبير! 🚀", `لقد حققت أرباحاً جيدة (${pointsDelta} نقطة) من ${shortReason}. استمر في التقدم! العب المزيد لمضاعفة أرباحك! 🤑`, 'reward');
     }
 
     // Log commission history & notification
@@ -466,7 +467,7 @@ export async function claimChainReward(uid: string, stepIndex: number, requiredT
 
       // Verify progress
       const progress = requiredType === 'video' ? (userData.totalVideosWatched || 0) : (userData.totalGamesPlayed || 0);
-      const startValue = requiredType === 'video' ? (userData[`chainVideosBase_${stepIndex}`] || 0) : (userData[`chainGamesBase_${stepIndex}`] || 0);
+      const startValue = requiredType === 'video' ? (userData.chainVideosBase || 0) : (userData.chainGamesBase || 0);
 
       if ((progress - startValue) < requiredAmount) {
          throw new Error("لم تستوفِ شروط هذه المهمة بعد");
@@ -507,11 +508,9 @@ export async function claimChainReward(uid: string, stepIndex: number, requiredT
            points: newTotal,
            xp: (userData.xp || 0) + reward,
            chainStep: nextStep,
-           [`chainStartValue_${nextStep}`]: nextStep % 2 === 0 ? currentTotalVideos : currentTotalGames // just generic recording, could record both
+           chainVideosBase: currentTotalVideos,
+           chainGamesBase: currentTotalGames
        };
-       // Better to just record both base values for the next step
-       updates[`chainVideosBase_${nextStep}`] = currentTotalVideos;
-       updates[`chainGamesBase_${nextStep}`] = currentTotalGames;
 
       // Check level upgrades
       let currentLevel = level;

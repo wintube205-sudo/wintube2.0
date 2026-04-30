@@ -35,11 +35,11 @@ service cloud.firestore {
     }
     
     function isValidUserUpdate(data) {
-      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.email is string && data.email.size() > 0 && data.email.size() <= 200 &&
-             data.role is string && data.role in ['user', 'admin'] &&
+      return data.get('name', 'مستخدم') is string && data.get('name', 'مستخدم').size() > 0 && data.get('name', 'مستخدم').size() <= 100 &&
+             data.get('email', 'a@example.com') is string && data.get('email', 'a@example.com').size() > 0 && data.get('email', 'a@example.com').size() <= 200 &&
+             data.get('role', 'user') is string && data.get('role', 'user') in ['user', 'admin'] &&
              data.points is number && data.points >= 0 &&
-             data.banned is bool;
+             data.get('banned', false) is bool;
     }
 
     match /users/{userId} {
@@ -51,25 +51,30 @@ service cloud.firestore {
         (
            request.auth.uid == userId &&
            isValidUserUpdate(incoming()) &&
-           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'lastVideoClaim', 'lastGameClaim', 'referralCount', 'referralsEarnings', 'level', 'streak', 'lastLoginClaim', 'name']) &&
-           incoming().role == existing().get('role', 'user') &&
-           incoming().banned == existing().get('banned', false)
+           incoming().diff(existing()).affectedKeys().hasOnly([
+              'points', 'lastVideoClaim', 'lastGameClaim', 'referralCount', 'referralsEarnings', 'level', 'streak', 'lastLoginClaim', 'name',
+              'xp', 'deviceId', 'totalVideosWatched', 'totalGamesPlayed', 'currentWeek', 'weeklyVideosWatched', 'weeklyGamesPlayed',
+              'weeklyClaimedVideos', 'weeklyClaimedGames', 'currentMonth', 'monthlyVideosWatched', 'monthlyGamesPlayed',
+              'monthlyClaimedVideos', 'monthlyClaimedGames', 'lifetimeClaimed100Videos', 'lifetimeClaimed100Games',
+              'chainStep', 'chainVideosBase', 'chainGamesBase', 'isVIP', 'vipExpiration'
+           ]) &&
+           incoming().get('role', 'user') == existing().get('role', 'user') &&
+           incoming().get('banned', false) == existing().get('banned', false)
         ) ||
         (
            // مسار السماح بتوزيع الأرباح على الدعوة (خارجي) - أو نسبة 20%
            isValidUserUpdate(incoming()) &&
-           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'referralCount', 'referralsEarnings']) &&
-           incoming().role == existing().get('role', 'user') &&
-           incoming().banned == existing().get('banned', false) &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['points', 'referralCount', 'referralsEarnings', 'levelings', 'affiliateClicks']) &&
+           incoming().get('role', 'user') == existing().get('role', 'user') &&
+           incoming().get('banned', false) == existing().get('banned', false) &&
            ( // إما إضافة صديق جديد (+100) أو أرباح النشاط (20%)
              (
-               incoming().points == existing().points + 100 &&
-               incoming().get('referralCount', 0) == existing().get('referralCount', 0) + 1 &&
-               incoming().get('referralsEarnings', 0) == existing().get('referralsEarnings', 0) + 100
-             ) || (
-               incoming().points > existing().points &&
-               incoming().get('referralCount', 0) == existing().get('referralCount', 0) &&
-               incoming().get('referralsEarnings', 0) > existing().get('referralsEarnings', 0)
+               incoming().points >= existing().points &&
+               incoming().get('referralCount', 0) >= existing().get('referralCount', 0) &&
+               incoming().get('referralsEarnings', 0) >= existing().get('referralsEarnings', 0)
+             ) ||
+             ( // affiliate clicks
+               incoming().get('affiliateClicks', 0) == existing().get('affiliateClicks', 0) + 1
              )
            )
         ) ||
@@ -79,8 +84,8 @@ service cloud.firestore {
            isValidUserUpdate(incoming()) &&
            incoming().diff(existing()).affectedKeys().hasOnly(['points']) &&
            incoming().points > existing().points &&
-           incoming().role == existing().get('role', 'user') &&
-           incoming().banned == existing().get('banned', false) &&
+           incoming().get('role', 'user') == existing().get('role', 'user') &&
+           incoming().get('banned', false) == existing().get('banned', false) &&
            (
              getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.points <= 
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.points - (incoming().points - existing().points)
