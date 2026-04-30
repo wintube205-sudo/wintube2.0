@@ -143,6 +143,54 @@ async function startServer() {
 
   // إعداد مسار استقبال إشعارات العروض (Postback / Webhook)
   // الرابط الجديد الخاص بك في MyLead سيكون:
+  // https://wintube.win/api/postback/mylead?subid=[ml_sub1]&payout=[payout]&status=[status]&tx=[lead_id]
+  app.get("/api/postback/mylead", async (req, res) => {
+    const subid = req.query.subid as string;
+    const payout = req.query.payout as string; 
+    const status = req.query.status as string; 
+    const tx = req.query.tx as string;
+
+    console.log(`[إشعار جديد من MyLead] 🎉`);
+    console.log(`المستخدم: ${subid}, الربح: ${payout}, الحالة: ${status}`);
+
+    if (!subid || !payout) {
+      return res.status(400).send("Missing parameters");
+    }
+
+    try {
+      // كل 1 دولار = 1000 نقطة (يمكنك تعديلها)
+      const exchangeRate = 1000;
+      const pointsToAdd = Math.floor(Number(payout) * exchangeRate);
+
+      if (!isNaN(pointsToAdd) && pointsToAdd > 0) {
+        const db = admin.firestore();
+        const userRef = db.collection('users').doc(subid);
+        const userSnap = await userRef.get();
+        
+        if (userSnap.exists) {
+          await db.runTransaction(async (t) => {
+             const doc = await t.get(userRef);
+             const currentPoints = doc.data()?.points || 0;
+             t.update(userRef, { points: currentPoints + pointsToAdd });
+             
+             const historyRef = userRef.collection('history').doc(tx || Date.now().toString());
+             t.set(historyRef, {
+               title: 'إكمال عرض من MyLead',
+               amount: pointsToAdd,
+               type: 'earn',
+               createdAt: admin.firestore.FieldValue.serverTimestamp()
+             });
+          });
+          console.log(`تم إضافة ${pointsToAdd} نقطة للمستخدم ${subid} بنجاح! ✅`);
+        }
+      }
+      res.status(200).send("OK");
+    } catch (error) {
+       console.error("خطأ:", error);
+       res.status(500).send("Error");
+    }
+  });
+
   // https://wintube.win/api/postback/offerwall?subid=[player_id]&reward=[virtual_amount]&payout=[payout]&status=[status]&tx=[transaction_id]
   app.get("/api/postback/offerwall", async (req, res) => {
     // استقبال وفك تشفير المتغيرات من رابط الـ Postback
