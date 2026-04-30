@@ -34,7 +34,7 @@ export const OffersView = ({ user }: any) => {
       setLoadingOffers(true);
       try {
         const userId = user?.id || 'guest';
-        const url = `https://www.cpagrip.com/common/offer_feed_json.php?user_id=2507811&pubkey=296f0c770b5322f24936b50aedcdb1b3&key=2e47a59b99cb8a12a2e766f783f4f1d2&tracking_id=${userId}`;
+        const url = `/api/proxy/cpagrip?user_id=2507811&pubkey=296f0c770b5322f24936b50aedcdb1b3&key=2e47a59b99cb8a12a2e766f783f4f1d2&tracking_id=${userId}`;
         
         // Using a proxy or just direct fetch if possible. 
         // Note: Direct fetch might fail due to CORS in some cases, but for JSON feeds they usually allow it.
@@ -63,12 +63,7 @@ export const OffersView = ({ user }: any) => {
       try {
         // Direct fetch from MyLead API. Note: If CORS issue occurs, a backend proxy is required (e.g. Firebase Functions).
         // Since we are frontend only, we attempt a direct fetch.
-        const response = await fetch('https://api.mylead.eu/api/external/v1/campaigns', {
-           headers: {
-             'Authorization': `Bearer ${myleadToken}`,
-             'Accept': 'application/json'
-           }
-        });
+        const response = await fetch(`/api/proxy/mylead?token=${myleadToken}`);
         const data = await response.json();
         
         // MyLead API wraps response in `data`
