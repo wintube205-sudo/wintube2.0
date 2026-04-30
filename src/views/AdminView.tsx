@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LayoutDashboard, Loader2, Settings, Bell } from 'lucide-react';
+import { LayoutDashboard, Loader2, Settings, Bell, Sparkles } from 'lucide-react';
 import { getAdminData, handleAdminWithdrawal, updateGlobalSettings } from '../services/api';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
+import { AdminAICoach } from '../components/AdminAICoach';
 
 export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [activeAdminTab, setActiveAdminTab] = useState('dashboard');
@@ -237,6 +238,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
         <div className="flex items-center gap-3"><LayoutDashboard className="text-red-500" size={32} /><h2 className="text-3xl font-black text-white">لوحة الإدارة</h2></div>
         <div className="flex bg-neutral-900 rounded-xl p-1 border border-neutral-800 overflow-x-auto w-full sm:w-auto">
           <button onClick={() => setActiveAdminTab('dashboard')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'dashboard' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>نظرة عامة</button>
+          <button onClick={() => setActiveAdminTab('ai_coach')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'ai_coach' ? 'bg-indigo-600 text-white' : 'text-indigo-400'}`}><Sparkles size={16}/> المستشار الذكي</button>
           <button onClick={() => setActiveAdminTab('users')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'users' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>المستخدمين</button>
           <button onClick={() => setActiveAdminTab('games')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'games' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الألعاب</button>
           <button onClick={() => setActiveAdminTab('settings')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'settings' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Settings size={16}/> الإعدادات</button>
@@ -248,6 +250,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
         </div>
       </div>
 
+      {activeAdminTab === 'ai_coach' && <AdminAICoach adminData={adminData} />}
       {activeAdminTab === 'analytics' && <AnalyticsDashboard />}
 
       {activeAdminTab === 'dashboard' && (
