@@ -6,6 +6,8 @@ import { db } from '../lib/firebase';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { AdminAICoach } from '../components/AdminAICoach';
 
+import { AdminShortLinks } from '../components/AdminShortLinks';
+
 export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [activeAdminTab, setActiveAdminTab] = useState('dashboard');
   const [adminData, setAdminData] = useState<any>(null);
@@ -239,19 +241,21 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
         <div className="flex bg-neutral-900 rounded-xl p-1 border border-neutral-800 overflow-x-auto w-full sm:w-auto">
           <button onClick={() => setActiveAdminTab('dashboard')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'dashboard' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>نظرة عامة</button>
           <button onClick={() => setActiveAdminTab('ai_coach')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'ai_coach' ? 'bg-indigo-600 text-white' : 'text-indigo-400'}`}><Sparkles size={16}/> المستشار الذكي</button>
-          <button onClick={() => setActiveAdminTab('users')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'users' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>المستخدمين</button>
-          <button onClick={() => setActiveAdminTab('games')} className={`px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'games' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الألعاب</button>
-          <button onClick={() => setActiveAdminTab('settings')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'settings' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Settings size={16}/> الإعدادات</button>
-          <button onClick={() => setActiveAdminTab('notifications')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'notifications' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Bell size={16}/> الإشعارات</button>
-          <button onClick={() => setActiveAdminTab('analytics')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'analytics' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>التحليلات</button>
-          <button onClick={() => setActiveAdminTab('api_keys')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'api_keys' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>منصة API</button>
-          <button onClick={() => setActiveAdminTab('support_tickets')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'support_tickets' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الدعم الفني</button>
-          <button onClick={() => setActiveAdminTab('vip_requests')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'vip_requests' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>طلبات VIP</button>
+          <button onClick={() => setActiveAdminTab('users')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'users' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>المستخدمين</button>
+          <button onClick={() => setActiveAdminTab('games')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'games' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الألعاب</button>
+          <button onClick={() => setActiveAdminTab('short_links')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'short_links' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الروابط</button>
+          <button onClick={() => setActiveAdminTab('settings')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'settings' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Settings size={16}/> الإعدادات</button>
+          <button onClick={() => setActiveAdminTab('notifications')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'notifications' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Bell size={16}/> الإشعارات</button>
+          <button onClick={() => setActiveAdminTab('analytics')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'analytics' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>التحليلات</button>
+          <button onClick={() => setActiveAdminTab('api_keys')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'api_keys' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>منصة API</button>
+          <button onClick={() => setActiveAdminTab('support_tickets')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'support_tickets' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الدعم الفني</button>
+          <button onClick={() => setActiveAdminTab('vip_requests')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'vip_requests' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>طلبات VIP</button>
         </div>
       </div>
 
       {activeAdminTab === 'ai_coach' && <AdminAICoach adminData={adminData} />}
       {activeAdminTab === 'analytics' && <AnalyticsDashboard />}
+      {activeAdminTab === 'short_links' && <AdminShortLinks />}
 
       {activeAdminTab === 'dashboard' && (
         <div className="animate-in fade-in">

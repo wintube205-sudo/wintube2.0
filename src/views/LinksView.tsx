@@ -62,6 +62,87 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
     loadLinks();
   }, [user]);
 
+  useEffect(() => {
+    // Check if user just returned from a short link
+    const checkVerification = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const verifyId = params.get('verify_link');
+      
+      if (verifyId && user && links.length > 0) {
+        // Find the link
+        const link = links.find(l => l.id === verifyId);
+        
+        if (link) {
+          // Check if it's already completed
+          if (link.completedToday) {
+            setError('لقد قمت بتخطي هذا الرابط واحتساب نقاطه مسبقاً اليوم.');
+          } else {
+            // Check if they actually started it recently (basic anti-cheat)
+            const startTimeStr = localStorage.getItem(`link_start_${verifyId}`);
+            if (startTimeStr) {
+              const startTime = parseInt(startTimeStr);
+              // if they came back super fast (e.g. less than 5 seconds), it might be cheating, but let's allow 2 seconds just in case
+              const elapsed = Date.now() - startTime;
+              if (elapsed < 2000) {
+                setError('عملية سريعة جداً. هل قمت بتخطي الرابط بشكل صحيح؟');
+              } else {
+                // Award points
+                await processReward(link);
+              }
+              // Clear the start time
+              localStorage.removeItem(`link_start_${verifyId}`);
+            } else {
+               // They didn't start it from the app or used a direct link
+               setError('يرجى بدء تخطي الرابط من خلال التطبيق لضمان احتساب النقاط.');
+            }
+          }
+        }
+        
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    };
+    
+    if (links.length > 0 && user) {
+      checkVerification();
+    }
+  }, [links, user]);
+
+  const processReward = async (link: any) => {
+    setProcessingId(link.id);
+    try {
+      await runTransaction(db, async (t) => {
+        const userRef = doc(db, 'users', user.id);
+        const userDoc = await t.get(userRef);
+        if (!userDoc.exists()) throw new Error('المستخدم غير موجود');
+
+        // Add points
+        const currentPoints = userDoc.data().points || 0;
+        t.update(userRef, { points: currentPoints + link.reward });
+
+        // Record history to prevent double click today
+        const historyRef = doc(collection(db, 'users', user.id, 'history'));
+        t.set(historyRef, {
+          type: 'earn',
+          linkId: link.id,
+          title: `تخطي الرابط: ${link.title}`,
+          amount: link.reward,
+          createdAt: serverTimestamp(),
+          date: new Date().toDateString()
+        });
+      });
+      
+      setSuccess(`نجاح! تم إضافة ${link.reward} نقطة إلى رصيدك.`);
+      setRefreshPoints((p: number) => p + 1);
+      loadLinks(); // reload state
+    } catch (err: any) {
+      console.error(err);
+      setError('فشل في إضافة النقاط.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const handleLinkClick = async (link: any) => {
     if (!user) {
       setError('يجب تسجيل الدخول لتتمكن من جمع النقاط من تخطي الروابط.');
@@ -73,49 +154,11 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
       return;
     }
 
-    // In a real application, clicking the link redirects the user to the shortener.
-    // The shortener then redirects back to a URL with a success token.
-    // Since we don't have an automated backend webhook for exe.io, we will simulate
-    // the process or use a simpler client-side click logic (not fully secure but works for demo).
+    // Set a timestamp in localStorage to verify they started from here
+    localStorage.setItem(`link_start_${link.id}`, Date.now().toString());
     
-    setProcessingId(link.id);
-    window.open(link.url, '_blank');
-    
-    // Simulate waiting for them to complete it.
-    // In production, you would verify a token from the callback URL.
-    setTimeout(async () => {
-      try {
-        await runTransaction(db, async (t) => {
-          const userRef = doc(db, 'users', user.id);
-          const userDoc = await t.get(userRef);
-          if (!userDoc.exists()) throw new Error('المستخدم غير موجود');
-
-          // Add points
-          const currentPoints = userDoc.data().points || 0;
-          t.update(userRef, { points: currentPoints + link.reward });
-
-          // Record history to prevent double click today
-          const historyRef = doc(collection(db, 'users', user.id, 'history'));
-          t.set(historyRef, {
-            type: 'earn', // use earn so it shows up correctly in Earn history
-            linkId: link.id,
-            title: `تخطي الرابط: ${link.title}`,
-            amount: link.reward,
-            createdAt: serverTimestamp(),
-            date: new Date().toDateString()
-          });
-        });
-        
-        setSuccess(`نجاح! تم إضافة ${link.reward} نقطة إلى رصيدك.`);
-        setRefreshPoints((p: number) => p + 1);
-        loadLinks(); // reload state
-      } catch (err: any) {
-        console.error(err);
-        setError('فشل في إضافة النقاط.');
-      } finally {
-        setProcessingId(null);
-      }
-    }, 15000); // Wait 15 seconds to simulate them doing the task
+    // Redirect them to the link in the SAME tab so they can return naturally
+    window.location.href = link.url;
   };
 
   return (

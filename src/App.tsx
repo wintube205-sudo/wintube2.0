@@ -218,6 +218,10 @@ const App = () => {
          localStorage.setItem('affClickLog', 'true');
       }
     }
+    const verifyLink = params.get('verify_link');
+    if (verifyLink) {
+      setActiveTab('links');
+    }
 
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
