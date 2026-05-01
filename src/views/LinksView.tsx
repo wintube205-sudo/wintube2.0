@@ -77,24 +77,8 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
           if (link.completedToday) {
             setError('لقد قمت بتخطي هذا الرابط واحتساب نقاطه مسبقاً اليوم.');
           } else {
-            // Check if they actually started it recently (basic anti-cheat)
-            const startTimeStr = localStorage.getItem(`link_start_${verifyId}`);
-            if (startTimeStr) {
-              const startTime = parseInt(startTimeStr);
-              // if they came back super fast (e.g. less than 5 seconds), it might be cheating, but let's allow 2 seconds just in case
-              const elapsed = Date.now() - startTime;
-              if (elapsed < 2000) {
-                setError('عملية سريعة جداً. هل قمت بتخطي الرابط بشكل صحيح؟');
-              } else {
-                // Award points
-                await processReward(link);
-              }
-              // Clear the start time
-              localStorage.removeItem(`link_start_${verifyId}`);
-            } else {
-               // They didn't start it from the app or used a direct link
-               setError('يرجى بدء تخطي الرابط من خلال التطبيق لضمان احتساب النقاط.');
-            }
+             // Award points
+             await processReward(link);
           }
         }
         

@@ -7,6 +7,7 @@ export const AdminShortLinks = () => {
   const [links, setLinks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [customId, setCustomId] = useState('');
   
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
@@ -41,7 +42,7 @@ export const AdminShortLinks = () => {
           title, url, reward, maxClicks
         });
       } else {
-        const newId = `link_${Date.now()}`;
+        const newId = customId.trim() !== '' ? customId.trim() : `link_${Date.now()}`;
         finalId = newId;
         await setDoc(doc(db, 'short_links', newId), {
           title, url, reward, maxClicks, clicks: 0, createdAt: serverTimestamp()
@@ -75,6 +76,7 @@ export const AdminShortLinks = () => {
 
   const resetForm = () => {
     setEditingId(null);
+    setCustomId('');
     setTitle('');
     setUrl('');
     setReward(50);
@@ -110,8 +112,8 @@ export const AdminShortLinks = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-neutral-400 mb-1">معرف الرابط (سيكون جزء من رابط الوجهة)</label>
-            <input type="text" value={editingId || 'سيتم توليده تلقائياً'} disabled className="w-full bg-neutral-800/50 border border-neutral-700 rounded-xl px-4 py-2 text-neutral-500 cursor-not-allowed text-left" dir="ltr" />
+            <label className="block text-sm text-neutral-400 mb-1">معرف الرابط (اختياري - سيكون جزء من رابط الوجهة)</label>
+            <input type="text" value={editingId || customId} onChange={e => !editingId && setCustomId(e.target.value)} disabled={!!editingId} placeholder="مثال: task1 (أو اتركه لتوليد تلقائي)" className="w-full bg-black border border-neutral-800 rounded-xl px-4 py-2 text-white focus:border-blue-500 outline-none text-left disabled:opacity-50 disabled:cursor-not-allowed" dir="ltr" />
           </div>
           <div>
             <label className="block text-sm text-neutral-400 mb-1">عنوان الرابط (يظهر للمستخدم)</label>

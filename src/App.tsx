@@ -234,7 +234,7 @@ const App = () => {
           setPoints(uData.points || 0);
 
           const isAdminCheck = uData.role === 'admin' || (fbUser.email && (fbUser.email.toLowerCase().trim() === 'iq.mh300@gmail.com' || fbUser.email.toLowerCase().trim() === 'wintube205@gmail.com'));
-          if (isAdminCheck) setActiveTab('admin');
+          if (isAdminCheck && !verifyLink && !ref && !aff) setActiveTab('admin');
 
           // Subscribe to notifications
           const notifQuery = query(collection(db, 'users', fbUser.uid, 'notifications'), orderBy('createdAt', 'desc'));
