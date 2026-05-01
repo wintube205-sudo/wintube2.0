@@ -1,15 +1,24 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 export const AdBanner: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // We append the script inside the component to ensure it runs
+    // and correctly targets the div that is rendered right here.
+    if (containerRef.current && !containerRef.current.querySelector('script')) {
+      const script = document.createElement('script');
+      script.async = true;
+      script.setAttribute('data-cfasync', 'false');
+      script.src = 'https://pl29250735.profitablecpmratenetwork.com/2da6c41b1bfa88a88a7943f40aec23f4/invoke.js';
+      containerRef.current.appendChild(script);
+    }
+  }, []);
+
   return (
-    <div className="w-full flex justify-center items-center py-2 my-2 relative">
-      <div id="frame" style={{ width: '100%', margin: 'auto', position: 'relative', zIndex: 99998 }}>
-        <iframe 
-          data-aa='2436111' 
-          src='//acceptable.a-ads.com/2436111/?size=Adaptive'
-          style={{ border: 0, padding: 0, width: '70%', height: 'auto', overflow: 'hidden', display: 'block', margin: 'auto' }}
-          title="a-ads"
-        ></iframe>
+    <div className="w-full flex justify-center items-center py-2 my-2 relative overflow-hidden">
+      <div ref={containerRef} className="w-full max-w-[728px] mx-auto flex justify-center">
+        <div id="container-2da6c41b1bfa88a88a7943f40aec23f4"></div>
       </div>
     </div>
   );
