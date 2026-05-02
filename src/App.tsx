@@ -28,6 +28,7 @@ import { User, X, Loader2, Bell } from 'lucide-react';
 import { getGlobalSettings } from './services/api';
 import { AdBanner } from './components/AdBanner';
 import { NativeAdBanner } from './components/NativeAdBanner';
+import { StickyAads } from './components/StickyAads';
 import { initAnalytics, setAnalyticsTab } from './services/AnalyticsService';
 
 import { GeminiChatbot } from './components/GeminiChatbot';
@@ -404,6 +405,7 @@ const App = () => {
         markAsRead={markAsRead} 
       />
       <GeminiChatbot user={user} />
+      {!user?.isVIP && <StickyAads />}
     </div>
   );
 };
