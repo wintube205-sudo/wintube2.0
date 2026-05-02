@@ -70,7 +70,7 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
       
       if (verifyId && user && links.length > 0) {
         // Find the link
-        const link = links.find(l => l.id === verifyId);
+        const link = links.find(l => String(l.id).trim() === String(verifyId).trim());
         
         if (link) {
           // Check if it's already completed
@@ -80,6 +80,8 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
              // Award points
              await processReward(link);
           }
+        } else {
+             setError(`لم يتم العثور على الرابط المطلوب (${verifyId}).`);
         }
         
         // Clean up URL
@@ -100,9 +102,9 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
         const userDoc = await t.get(userRef);
         if (!userDoc.exists()) throw new Error('المستخدم غير موجود');
 
-        // Add points
-        const currentPoints = userDoc.data().points || 0;
-        t.update(userRef, { points: currentPoints + link.reward });
+        const currentPoints = Number(userDoc.data().points) || 0;
+        const rewardAmount = Number(link.reward);
+        t.update(userRef, { points: currentPoints + rewardAmount });
 
         // Record history to prevent double click today
         const historyRef = doc(collection(db, 'users', user.id, 'history'));
@@ -110,7 +112,7 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
           type: 'earn',
           linkId: link.id,
           title: `تخطي الرابط: ${link.title}`,
-          amount: link.reward,
+          amount: rewardAmount,
           createdAt: serverTimestamp(),
           date: new Date().toDateString()
         });
@@ -121,7 +123,7 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
       loadLinks(); // reload state
     } catch (err: any) {
       console.error(err);
-      setError('فشل في إضافة النقاط.');
+      setError(`فشل في إضافة النقاط: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setProcessingId(null);
     }
