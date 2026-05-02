@@ -99,19 +99,23 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
     setProcessingId(link.id);
     try {
       await runTransaction(db, async (t) => {
+        // 1. All Reads FIRST
         const userRef = doc(db, 'users', user.id);
         const userDoc = await t.get(userRef);
         if (!userDoc.exists()) throw new Error('المستخدم غير موجود');
 
-        const currentPoints = Number(userDoc.data().points) || 0;
-        const rewardAmount = Number(link.reward);
-        t.update(userRef, { points: currentPoints + rewardAmount });
-
-        // Increment clicks for the link itself
         const linkRef = doc(db, 'short_links', link.id);
         const linkDoc = await t.get(linkRef);
+
+        // 2. Calculations
+        const currentPoints = Number(userDoc.data().points) || 0;
+        const rewardAmount = Number(link.reward);
+        
+        // 3. All Writes SECOND
+        t.update(userRef, { points: currentPoints + rewardAmount });
+
         if (linkDoc.exists()) {
-          const currentClicks = linkDoc.data().clicks || 0;
+          const currentClicks = Number(linkDoc.data().clicks) || 0;
           t.update(linkRef, { clicks: currentClicks + 1 });
         }
 
