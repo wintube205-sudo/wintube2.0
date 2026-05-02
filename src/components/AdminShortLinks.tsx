@@ -154,23 +154,42 @@ export const AdminShortLinks = () => {
         ) : (
           <div className="space-y-3">
             {links.map((li: any) => (
-              <div key={li.id} className="bg-black border border-neutral-800 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h4 className="font-bold text-white flex items-center gap-2">
-                    <LinkIcon size={16} className="text-blue-500" /> {li.title}
-                  </h4>
-                  <p className="text-neutral-500 text-sm mt-1" dir="ltr">{li.url}</p>
-                  <p className="text-xs text-neutral-400 mt-1">
-                    ID: <span className="text-blue-400 pr-2" dir="ltr">{li.id}</span> | النقاط: <span className="text-amber-500 font-bold">{li.reward}</span> | الزيارات: {li.clicks || 0}/{li.maxClicks}
-                  </p>
+              <div key={li.id} className="bg-black border border-neutral-800 p-4 rounded-xl flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h4 className="font-bold text-white flex items-center gap-2">
+                      <LinkIcon size={16} className="text-blue-500" /> {li.title}
+                    </h4>
+                    <p className="text-neutral-500 text-sm mt-1 truncate max-w-md" dir="ltr" title={li.url}>{li.url}</p>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      ID: <span className="text-blue-400 pr-2 font-mono" dir="ltr">{li.id}</span> | النقاط: <span className="text-amber-500 font-bold">{li.reward}</span> | الزيارات: {li.clicks || 0}/{li.maxClicks}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 self-end sm:self-start">
+                    <button onClick={() => handleEdit(li)} className="p-2 bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 rounded-lg transition-colors" title="تعديل">
+                      <Edit2 size={18} />
+                    </button>
+                    <button onClick={() => handleDelete(li.id)} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors" title="حذف">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleEdit(li)} className="p-2 bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 rounded-lg">
-                    <Edit2 size={18} />
-                  </button>
-                  <button onClick={() => handleDelete(li.id)} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg">
-                    <Trash2 size={18} />
-                  </button>
+                
+                <div className="pt-3 border-t border-neutral-800">
+                   <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">رابط الوجهة (ضعه في موقع الاختصار):</label>
+                   <div className="flex items-center gap-2 bg-black/50 p-2 rounded-lg border border-neutral-800">
+                      <code className="text-xs text-blue-400 flex-1 truncate font-mono" dir="ltr">{myUrl}/?verify_link={li.id}</code>
+                      <button 
+                        onClick={() => {
+                          const destUrl = `${myUrl}/?verify_link=${li.id}`;
+                          navigator.clipboard.writeText(destUrl);
+                          alert('تم نسخ رابط الوجهة بنجاح!\nقم بوضعه في "Destination URL" بموقع الاختصار.');
+                        }}
+                        className="text-[10px] bg-neutral-800 hover:bg-neutral-700 text-white px-2 py-1 rounded transition-colors"
+                      >
+                        نسخ الرابط
+                      </button>
+                   </div>
                 </div>
               </div>
             ))}

@@ -70,7 +70,8 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
       
       if (verifyId && user && links.length > 0) {
         // Find the link
-        const link = links.find(l => String(l.id).trim() === String(verifyId).trim());
+        const linkIdNormalized = String(verifyId).trim();
+        const link = links.find(l => String(l.id).trim() === linkIdNormalized);
         
         if (link) {
           // Check if it's already completed
@@ -81,7 +82,7 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
              await processReward(link);
           }
         } else {
-             setError(`لم يتم العثور على الرابط المطلوب (${verifyId}).`);
+             setError(`لم يتم العثور على الرابط المطلوب في النظام (ID: ${linkIdNormalized}). يرجى التأكد من أن الرابط المختصر يحتوي على المعرف الصحيح.`);
         }
         
         // Clean up URL
@@ -105,6 +106,14 @@ export const LinksView = ({ user, setRefreshPoints }: any) => {
         const currentPoints = Number(userDoc.data().points) || 0;
         const rewardAmount = Number(link.reward);
         t.update(userRef, { points: currentPoints + rewardAmount });
+
+        // Increment clicks for the link itself
+        const linkRef = doc(db, 'short_links', link.id);
+        const linkDoc = await t.get(linkRef);
+        if (linkDoc.exists()) {
+          const currentClicks = linkDoc.data().clicks || 0;
+          t.update(linkRef, { clicks: currentClicks + 1 });
+        }
 
         // Record history to prevent double click today
         const historyRef = doc(collection(db, 'users', user.id, 'history'));
