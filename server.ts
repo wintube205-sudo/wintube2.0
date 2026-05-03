@@ -289,6 +289,63 @@ async function startServer() {
     }
   });
 
+  // https://wintube.win/api/postback/cpxresearch?status={status}&trans_id={trans_id}&user_id={user_id}&amount_local={amount_local}&amount_usd={amount_usd}&hash={secure_hash}
+  app.get("/api/postback/cpxresearch", async (req, res) => {
+    const status = req.query.status as string; // 1 = Success, 2 = Chargeback
+    const trans_id = req.query.trans_id as string;
+    const user_id = req.query.user_id as string;
+    const amount_local = req.query.amount_local as string;
+
+    if (!user_id || !amount_local || !status) {
+      return res.status(400).send("Missing parameters");
+    }
+
+    try {
+      const points = Number(amount_local);
+      if (!isNaN(points) && points > 0) {
+        const db = admin.firestore();
+        const userRef = db.collection('users').doc(user_id);
+        const userSnap = await userRef.get();
+        
+        if (userSnap.exists) {
+          await db.runTransaction(async (t) => {
+             const doc = await t.get(userRef);
+             const currentPoints = Number(doc.data()?.points) || 0;
+             
+             const txId = trans_id || Date.now().toString();
+             const historyRef = userRef.collection('history').doc(txId + (status === '2' ? '_cb' : ''));
+             
+             if (status === '1') {
+                 // Success - Add Points
+                 t.update(userRef, { points: currentPoints + points });
+                 t.set(historyRef, {
+                   title: 'إكمال استبيان (CPX Research)',
+                   amount: points,
+                   type: 'earn',
+                   createdAt: admin.firestore.FieldValue.serverTimestamp()
+                 });
+                 console.log(`CPX Research: تم إضافة ${points} نقطة للمستخدم ${user_id}`);
+             } else if (status === '2') {
+                 // Chargeback - Deduct Points
+                 t.update(userRef, { points: Math.max(0, currentPoints - points) });
+                 t.set(historyRef, {
+                   title: 'خصم استبيان محتال/ملغى (CPX Research)',
+                   amount: points,
+                   type: 'spend',
+                   createdAt: admin.firestore.FieldValue.serverTimestamp()
+                 });
+                 console.log(`CPX Research: تم خصم ${points} نقطة من المستخدم ${user_id} (احتيال/استرداد)`);
+             }
+          });
+        }
+      }
+      res.status(200).send("ok");
+    } catch (error) {
+       console.error("CPX Research Postback Error:", error);
+       res.status(500).send("error");
+    }
+  });
+
   // إعداد مسار استقبال إشعارات CPAGrip
   // الرابط الجديد الخاص بك في CPAGrip سيكون:
   // https://wintube.win/api/postback/cpagrip?tracking_id={tracking_id}&payout={payout}&offer_id={offer_id}&ip={ip}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Play, EyeOff, Loader2, Gift, Clock, X, Search, Sparkles } from 'lucide-react';
-import { updatePoints, incrementDailyProgress } from '../lib/firebase';
+import { updatePoints, incrementDailyProgress, checkDailyLimit } from '../lib/firebase';
 import { AdBanner } from '../components/AdBanner';
 import { NativeAdBanner } from '../components/NativeAdBanner';
 
@@ -81,6 +81,13 @@ export const VideosView = ({ user, setRefreshPoints, settings }: any) => {
 
     setIsClaiming(true);
     try {
+      const canWatch = await checkDailyLimit(user.id, 'video');
+      if (!canWatch) {
+         setToast('لقد وصلت للحد الأقصى من مشاهدة الفيديوهات لهذا اليوم (20 نقطة). عد غداً!');
+         setPlayingVideo(null);
+         return;
+      }
+
       const baseReward = settings?.videoPoints || 10;
       const reward = settings?.eventMode ? baseReward * 2 : baseReward;
       const response = await updatePoints(user.id, reward, `مشاهدة فيديو: ${playingVideo?.title}`, 'earn');

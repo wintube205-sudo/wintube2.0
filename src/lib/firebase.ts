@@ -684,6 +684,22 @@ export async function submitVipRequest(uid: string, userName: string, method: st
   }
 }
 
+export async function checkDailyLimit(uid: string, type: 'video' | 'game'): Promise<boolean> {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const statRef = doc(db, 'users', uid, 'daily_stats', today);
+    const snap = await getDoc(statRef);
+    if (!snap.exists()) return true;
+    const data = snap.data();
+    if (type === 'video' && (data.videosWatched || 0) >= 20) return false;
+    if (type === 'game' && (data.gamesPlayed || 0) >= 20) return false;
+    return true;
+  } catch (e) {
+    console.error("Error checking daily limit", e);
+    return true; // Allow on error to not block users accidentally
+  }
+}
+
 export async function incrementDailyProgress(uid: string, type: 'video' | 'game') {
   try {
     const today = new Date().toISOString().split('T')[0];

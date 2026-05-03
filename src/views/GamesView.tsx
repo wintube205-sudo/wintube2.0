@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Gamepad2, X } from 'lucide-react';
-import { updatePoints, incrementDailyProgress } from '../lib/firebase';
+import { updatePoints, incrementDailyProgress, checkDailyLimit } from '../lib/firebase';
 import { collection, getDocs, query, limit, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { AdBanner } from '../components/AdBanner';
@@ -68,6 +68,13 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
 
     setIsClaiming(true);
     try {
+      const canPlay = await checkDailyLimit(user.id, 'game');
+      if (!canPlay) {
+         setToast('لقد وصلت للحد الأقصى من لعب الألعاب لهذا اليوم (20 مرة). عد غداً!');
+         setPlayingArcadeGame(null);
+         return;
+      }
+
       const baseReward = settings?.gamePoints || 5;
       const reward = settings?.eventMode ? baseReward * 2 : baseReward;
       const response = await updatePoints(user.id, reward, 'لعب لعبة تسلية', 'earn');
@@ -128,6 +135,13 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
     
     setIsRolling(true); setResult(null);
     try {
+      const canPlay = await checkDailyLimit(user.id, 'game');
+      if (!canPlay) {
+         setResult({ msg: 'وصلت للحد الأقصى (20) لعبة اليوم.', color: 'text-red-500' });
+         setIsRolling(false);
+         return;
+      }
+
       const deduct = await updatePoints(user.id, -bet, 'رهان لعبة رمي العملة', 'spend');
       if (!deduct.success) {
          setResult({ msg: deduct.error, color: 'text-red-500' });

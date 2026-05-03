@@ -8,6 +8,8 @@ import { AdminAICoach } from '../components/AdminAICoach';
 
 import { AdminShortLinks } from '../components/AdminShortLinks';
 
+import { updatePoints } from '../lib/firebase';
+
 export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [activeAdminTab, setActiveAdminTab] = useState('dashboard');
   const [adminData, setAdminData] = useState<any>(null);
@@ -15,6 +17,11 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const [newGameForm, setNewGameForm] = useState({ title: '', url: '', thumbnail: '' });
+  
+  // Point adjustment state
+  const [managingPointsUser, setManagingPointsUser] = useState<string | null>(null);
+  const [pointsAdjustment, setPointsAdjustment] = useState<number>(0);
+  const [pointsAdjReason, setPointsAdjReason] = useState<string>('مكافأة من الإدارة');
   const [settingsForm, setSettingsForm] = useState<any>({ 
     videoPoints: 0, gamePoints: 0, minWithdrawal: 0, pointsPerDollar: 1000,
     taskRewardLogin: 0, taskTargetVideos: 0, taskRewardVideos: 0, taskTargetGames: 0, taskRewardGames: 0,
@@ -185,6 +192,29 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
     loadData(); 
   };
   
+  const handlePointsAdjustment = async () => {
+    if (!managingPointsUser || pointsAdjustment === 0) return;
+    try {
+       const userDoc = users.find((u: any) => u.id === managingPointsUser);
+       if (!userDoc) {
+          showToast('المستخدم غير موجود'); return;
+       }
+       const type = pointsAdjustment > 0 ? 'earn' : 'spend';
+       const res = await updatePoints(managingPointsUser, pointsAdjustment, pointsAdjReason, type);
+       if (res.success) {
+          showToast('تم تحديث النقاط بنجاح');
+          setManagingPointsUser(null);
+          setPointsAdjustment(0);
+          setPointsAdjReason('مكافأة من الإدارة');
+          loadData();
+       } else {
+          showToast(`خطأ: ${res.error}`);
+       }
+    } catch(err: any) {
+       showToast(`خطأ: ${err.message}`);
+    }
+  };
+  
   const onAddGame = async (e: any) => { 
     e.preventDefault(); 
     if (!newGameForm.title || !newGameForm.url) {
@@ -307,6 +337,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
                      <tr key={u.id} className={`border-b border-neutral-800 ${u.banned ? 'opacity-50' : ''}`}>
                         <td className="p-4">{u.name}</td><td className="p-4 text-amber-400">{u.points}</td>
                         <td className="p-4 flex justify-center gap-2">
+                           <button onClick={() => setManagingPointsUser(u.id)} className="bg-blue-600/20 text-blue-500 px-3 py-1 rounded">النقاط</button>
                            <button onClick={() => onUserAction(u.id, u.banned ? 'unban' : 'ban')} className={`${u.banned ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500'} px-3 py-1 rounded`}>{u.banned ? 'فك الحظر' : 'حظر'}</button>
                         </td>
                      </tr>
@@ -736,6 +767,27 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
       )}
 
       {toast && <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full font-bold text-sm bg-green-600 text-white z-50">{toast}</div>}
+
+      {managingPointsUser && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[100]">
+          <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-3xl max-w-sm w-full space-y-4">
+             <h3 className="text-xl font-bold text-white">إدارة نقاط المستخدم</h3>
+             <div>
+                <label className="text-sm text-neutral-400 block mb-2">الكمية (لإضافة نقاط استخدم رقم موجب، للخصم استخدم سالب)</label>
+                <input type="number" value={pointsAdjustment} onChange={e => setPointsAdjustment(Number(e.target.value))} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white" dir="ltr" />
+             </div>
+             <div>
+                <label className="text-sm text-neutral-400 block mb-2">السبب (يظهر في سجل المستخدم)</label>
+                <input type="text" value={pointsAdjReason} onChange={e => setPointsAdjReason(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white" />
+             </div>
+             <div className="flex gap-2">
+                <button onClick={handlePointsAdjustment} className="flex-1 bg-amber-500 hover:bg-amber-400 text-black py-3 rounded-xl font-bold transition-colors">تأكيد</button>
+                <button onClick={() => {setManagingPointsUser(null); setPointsAdjustment(0); setPointsAdjReason('مكافأة من الإدارة');}} className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-3 rounded-xl font-bold transition-colors">إلغاء</button>
+             </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

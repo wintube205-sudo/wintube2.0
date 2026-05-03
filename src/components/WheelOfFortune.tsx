@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { updatePoints, incrementDailyProgress } from '../lib/firebase';
+import { updatePoints, incrementDailyProgress, checkDailyLimit } from '../lib/firebase';
 import { Disc, PlayCircle, Loader2 } from 'lucide-react';
 
 export const WheelOfFortune = ({ user, points, setRefreshPoints }: any) => {
@@ -29,6 +29,13 @@ export const WheelOfFortune = ({ user, points, setRefreshPoints }: any) => {
     setResult(null);
 
     try {
+      const canSpin = await checkDailyLimit(user.id, 'game');
+      if (!canSpin) {
+         setResult({ msg: 'وصلت للحد الأقصى (20) لعبة اليوم.', color: 'text-red-500' });
+         setIsSpinning(false);
+         return;
+      }
+
       const deduct = await updatePoints(user.id, -bet, 'عجلة الحظ - رهان', 'spend');
       if (!deduct.success) {
         setResult({ msg: deduct.error, color: 'text-red-500' });

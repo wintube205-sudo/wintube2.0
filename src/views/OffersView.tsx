@@ -91,6 +91,22 @@ export const OffersView = ({ user }: any) => {
       urlTemplate: 'https://reward-me.eu/03922d64-3b32-11f1-832c-8a5fb7be40ea?player_id=[USER_ID]',
       bgColor: 'bg-purple-600',
       icon: Briefcase
+    },
+    {
+      id: 'cpxresearch',
+      title: 'استبيانات CPX Research',
+      desc: 'اربح مبالغ ضخمة من إكمال الاستبيانات',
+      urlTemplate: 'https://offers.cpx-research.com/index.php?app_id=32823&ext_user_id=[USER_ID]',
+      bgColor: 'bg-blue-600',
+      icon: Briefcase
+    },
+    {
+      id: 'bitcotasks',
+      title: 'عروض BitcoTasks',
+      desc: 'مهام وعروض إضافية مميزة',
+      urlTemplate: 'https://bitcotasks.com/wall?subid=[USER_ID]', // يرجى تغيير الرابط بالرابط الخاص بك في BitcoTasks
+      bgColor: 'bg-amber-600',
+      icon: Gift
     }
   ];
 
