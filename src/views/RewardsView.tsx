@@ -167,7 +167,7 @@ export const RewardsView = ({ points, user, setRefreshPoints, settings }: any) =
                         </div>
                         <div className="flex justify-between items-center text-sm pt-3 border-t border-neutral-800/50 mt-2">
                            <span className="text-neutral-400">{item.method}</span>
-                           <span className="text-neutral-600 font-mono text-xs">{item.account?.substring(0, 10)}...</span>
+                           <span className="text-neutral-500 font-mono text-xs truncate max-w-[150px]" title={item.account}>{item.account}</span>
                         </div>
                      </div>
                   ))

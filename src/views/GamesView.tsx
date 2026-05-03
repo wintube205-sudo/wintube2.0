@@ -26,7 +26,16 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
     const fetchGames = async () => {
       try {
         const snap = await getDocs(query(collection(db, 'games'), limit(20)));
-        const defaultGames = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        let defaultGames = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        if (defaultGames.length === 0) {
+           defaultGames = [
+             { id: '1', title: '2048', url: 'https://play2048.co/', thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/2048_logo.svg/512px-2048_logo.svg.png', isFeatured: true },
+             { id: '2', title: 'Flappy Bird', url: 'https://flappybird.io/', thumbnail: 'https://upload.wikimedia.org/wikipedia/en/0/0a/Flappy_Bird_icon.png', isFeatured: false },
+             { id: '3', title: 'Pac-Man', url: 'https://freepacman.org/', thumbnail: 'https://upload.wikimedia.org/wikipedia/en/5/59/Pac-man.png', isFeatured: false },
+             { id: '4', title: 'Tetris', url: 'https://tetris.com/play-tetris', thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/max-width/400/3/39/Tetrominoes_IJLO_STZ_Clear.svg', isFeatured: true }
+           ];
+        }
 
         const userSnap = await getDocs(query(collection(db, 'user_content'), where('type', '==', 'game'), limit(15)));
         const userGames = userSnap.docs.map(d => ({ id: d.id, isUserContent: true, ...d.data() }));

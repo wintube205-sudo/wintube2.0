@@ -56,7 +56,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isOpen, isMobile, onCloseSide
     { id: 'proofs', icon: ShieldCheck, label: 'إثباتات السحب' },
     { id: 'support', icon: Star, label: 'الدعم والتقييم' },
   ];
-  const isAdminEmail = user?.email && (user.email.toLowerCase().trim() === 'iq.mh300@gmail.com' || user.email.toLowerCase().trim() === 'wintube205@gmail.com');
+  const isAdminEmail = user?.email && import.meta.env.VITE_ADMIN_EMAILS?.split(',').includes(user.email.toLowerCase().trim());
   const isAdmin = user?.role === 'admin' || isAdminEmail;
   if (isAdmin) navItems.push({ id: 'admin', icon: LayoutDashboard, label: 'لوحة التحكم', badge: 'مدير' });
 

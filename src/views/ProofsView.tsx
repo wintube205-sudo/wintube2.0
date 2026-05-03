@@ -33,7 +33,23 @@ export const ProofsView = () => {
                 </div>
 
                 {loading ? (
-                    <div className="flex justify-center py-20"><Loader2 className="animate-spin text-neutral-500 shadow-xl" size={40} /></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[1,2,3,4,5,6].map(i => (
+                            <div key={i} className="bg-neutral-950 border border-neutral-800 p-4 rounded-2xl flex justify-between items-center animate-pulse">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-neutral-900 border border-neutral-800"></div>
+                                    <div className="space-y-2">
+                                        <div className="w-20 h-4 bg-neutral-800 rounded"></div>
+                                        <div className="w-16 h-3 bg-neutral-900 rounded"></div>
+                                    </div>
+                                </div>
+                                <div className="space-y-2 text-left">
+                                    <div className="w-16 h-3 bg-neutral-800 rounded ml-auto"></div>
+                                    <div className="w-20 h-3 bg-neutral-900 rounded ml-auto"></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 ) : proofs.length === 0 ? (
                     <div className="text-center py-20 text-neutral-500 font-bold border border-dashed border-neutral-800 rounded-2xl">
                         لا توجد سحوبات مكتملة حتى الآن. كن أنت الأول!

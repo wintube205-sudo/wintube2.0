@@ -21,7 +21,7 @@ import { ProofsView } from './views/ProofsView';
 import { SupportView } from './views/SupportView';
 import { VIPView } from './views/VIPView';
 
-import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail, db, checkVPNAndProxy, recordAffiliateClick } from './lib/firebase';
+import { auth, signIn, getUserData, createUserDocument, signInWithEmail, signUpWithEmail, resetUserPassword, db, checkVPNAndProxy, recordAffiliateClick } from './lib/firebase';
 import { onAuthStateChanged, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
 import { collection, query, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { User, X, Loader2, Bell } from 'lucide-react';
@@ -60,7 +60,7 @@ const NotificationsModal = ({ isOpen, onClose, notifications, markAsRead }: any)
   );
 }
 
-const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegister, onResendVerification }: any) => {
+const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegister, onResendVerification, onResetPassword }: any) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -122,6 +122,26 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError('يرجى إدخال البريد الإلكتروني الخاص بك في الحقل أعلاه لإرسال رابط إعادة التعيين.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      await onResetPassword(email);
+      setSuccessMsg('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني!');
+    } catch (err: any) {
+      let msg = err.message || 'حدث خطأ';
+      if (msg.includes('auth/user-not-found')) msg = 'لم يتم العثور على حساب بهذا البريد';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" dir="rtl">
       <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md p-6 relative">
@@ -152,7 +172,19 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
             <input type="text" placeholder="الاسم" required value={name} onChange={e => setName(e.target.value)} className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500" />
           )}
           <input type="email" placeholder="البريد الإلكتروني" required value={email} onChange={e => setEmail(e.target.value)} className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500 ltr" dir="ltr" />
-          <input type="password" placeholder="كلمة المرور" required value={password} onChange={e => setPassword(e.target.value)} className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500 ltr" dir="ltr" />
+          <div>
+             <input type="password" placeholder="كلمة المرور" required value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500 ltr" dir="ltr" />
+             {isLogin && (
+               <button 
+                 type="button" 
+                 onClick={handleResetPassword}
+                 disabled={loading}
+                 className="text-xs text-neutral-400 hover:text-blue-400 block mt-2 text-right transition-colors"
+               >
+                 نسيت كلمة المرور؟
+               </button>
+             )}
+          </div>
           <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-2 hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center">
             {loading ? <Loader2 className="animate-spin" size={20} /> : (isLogin ? 'دخول' : 'إنشاء حساب')}
           </button>
@@ -234,7 +266,7 @@ const App = () => {
           setUser(uData);
           setPoints(uData.points || 0);
 
-          const isAdminCheck = uData.role === 'admin' || (fbUser.email && (fbUser.email.toLowerCase().trim() === 'iq.mh300@gmail.com' || fbUser.email.toLowerCase().trim() === 'wintube205@gmail.com'));
+          const isAdminCheck = uData.role === 'admin' || (fbUser.email && import.meta.env.VITE_ADMIN_EMAILS?.split(',').includes(fbUser.email.toLowerCase().trim()));
           if (isAdminCheck && !verifyLink && !ref && !aff) setActiveTab('admin');
 
           // Subscribe to notifications
@@ -285,7 +317,7 @@ const App = () => {
         }
         setUser(uData);
         setPoints(uData.points || 0);
-        const isAdminCheck = uData.role === 'admin' || (fbUser.email && (fbUser.email.toLowerCase().trim() === 'iq.mh300@gmail.com' || fbUser.email.toLowerCase().trim() === 'wintube205@gmail.com'));
+        const isAdminCheck = uData.role === 'admin' || (fbUser.email && import.meta.env.VITE_ADMIN_EMAILS?.split(',').includes(fbUser.email.toLowerCase().trim()));
         if (isAdminCheck) setActiveTab('admin');
     }
   };
@@ -397,6 +429,7 @@ const App = () => {
         onEmailLogin={handleEmailLogin}
         onEmailRegister={handleEmailRegister}
         onResendVerification={handleResendVerification}
+        onResetPassword={resetUserPassword}
       />
       <NotificationsModal 
         isOpen={isNotifOpen} 

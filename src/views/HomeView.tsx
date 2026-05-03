@@ -27,7 +27,7 @@ export const HomeView = ({ setActiveTab }: any) => (
     </section>
     <section>
       <h2 className="text-2xl font-black text-white mb-6">طرق الربح المتاحة</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {[
           { id: 'real_offers', title: 'عروض حقيقية', desc: 'مهام وتطبيقات موثوقة', icon: Briefcase, color: 'text-amber-500', bg: 'bg-amber-500/10' },
           { id: 'offers', title: 'جدار العروض', desc: 'اربح آلاف النقاط', icon: Briefcase, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
@@ -35,12 +35,47 @@ export const HomeView = ({ setActiveTab }: any) => (
           { id: 'games', title: 'العب واربح', desc: 'ألعاب محمية وعادلة', icon: Gamepad2, color: 'text-blue-500', bg: 'bg-blue-500/10' },
           { id: 'referrals', title: 'دعوة الأصدقاء', desc: 'احصل على 20% من أرباحهم', icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10' }
         ].map((item, i) => (
-          <div key={i} onClick={() => setActiveTab(item.id)} className="bg-neutral-900 border border-neutral-800 p-5 rounded-2xl hover:border-neutral-700 transition-colors cursor-pointer text-right">
-            <div className={`w-12 h-12 rounded-xl ${item.bg} flex items-center justify-center mb-4`}><item.icon className={item.color} size={24} /></div>
+          <div key={i} onClick={() => setActiveTab(item.id)} className="bg-neutral-900 border border-neutral-800 p-5 rounded-2xl hover:border-neutral-700 transition-colors cursor-pointer text-right group">
+            <div className={`w-12 h-12 rounded-xl ${item.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}><item.icon className={item.color} size={24} /></div>
             <h3 className="font-bold text-white mb-1">{item.title}</h3>
             <p className="text-xs text-neutral-400">{item.desc}</p>
           </div>
         ))}
+      </div>
+    </section>
+
+    <section className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <h2 className="text-2xl font-black text-white mb-8 relative z-10">كيف تبدأ وتربح معنا؟ (خطوات بسيطة)</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+         <div className="flex gap-4 items-start">
+            <div className="w-10 h-10 shrink-0 rounded-full bg-blue-600 font-black text-white flex items-center justify-center text-xl shadow-lg shadow-blue-600/30">1</div>
+            <div>
+               <h3 className="text-white font-bold text-lg mb-2">جمع النقاط بحرية</h3>
+               <p className="text-neutral-400 text-sm leading-relaxed">
+                  أنشئ حسابك وابدأ بتنفيذ العروض، جمع النقاط عبر تخطي الروابط، أو مشاهدة الفيديوهات المتاحة في القائمة الجانبية.
+               </p>
+            </div>
+         </div>
+         <div className="flex gap-4 items-start">
+            <div className="w-10 h-10 shrink-0 rounded-full bg-amber-500 font-black text-white flex items-center justify-center text-xl shadow-lg shadow-amber-500/30">2</div>
+            <div>
+               <h3 className="text-white font-bold text-lg mb-2">متابعة الأرباح</h3>
+               <p className="text-neutral-400 text-sm leading-relaxed">
+                  رصيدك يُحفظ فوراً في قاعدة بيانات سحابية وتستطيع رؤيته من الأعلى، ستلاحظ تقدمك كلما زاد نشاطك.
+               </p>
+            </div>
+         </div>
+         <div className="flex gap-4 items-start">
+            <div className="w-10 h-10 shrink-0 rounded-full bg-green-500 font-black text-white flex items-center justify-center text-xl shadow-lg shadow-green-500/30">3</div>
+            <div>
+               <h3 className="text-white font-bold text-lg mb-2">سحب أرباحك الحقيقية</h3>
+               <p className="text-neutral-400 text-sm leading-relaxed">
+                  انتقل إلى قسم الجوائز واسحب نقاطك نقداً عبر (ASiaCell, ZainCash, USDT) وتصلك الأرباح سريعاً بعد المراجعة.
+               </p>
+            </div>
+         </div>
       </div>
     </section>
   </div>

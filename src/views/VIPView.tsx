@@ -10,8 +10,8 @@ export const VIPView = ({ user, points, setRefreshPoints }: any) => {
     const [toast, setToast] = useState('');
 
     const cards = [
-        { id: 'mastercard', label: 'Mastercard / Visa', value: '5759527202' },
-        { id: 'usdt', label: 'USDT (TRC-20)', value: 'TQovQSgQmL6YD9SCDWiMxqhPWC6VkTnVbv' }
+        { id: 'mastercard', label: 'Mastercard / Visa', value: import.meta.env.VITE_VIP_MASTERCARD || 'يجب تعيين المتغير البيئي' },
+        { id: 'usdt', label: 'USDT (TRC-20)', value: import.meta.env.VITE_VIP_USDT || 'يجب تعيين المتغير البيئي' }
     ];
 
     const copyToClipboard = (text: string) => {

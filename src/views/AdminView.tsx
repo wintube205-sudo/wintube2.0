@@ -215,7 +215,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
     loadData();
   };
 
-  const isAdminEmail = user?.email && (user.email.toLowerCase().trim() === 'iq.mh300@gmail.com' || user.email.toLowerCase().trim() === 'wintube205@gmail.com');
+  const isAdminEmail = user?.email && import.meta.env.VITE_ADMIN_EMAILS?.split(',').includes(user.email.toLowerCase().trim());
   const hasAccess = user?.role === 'admin' || isAdminEmail;
 
   if (!hasAccess) return <div className="text-center py-20 text-red-500 font-bold">مرفوض: دخول للإدارة فقط. (الإيميل الحالي: {user?.email})</div>;

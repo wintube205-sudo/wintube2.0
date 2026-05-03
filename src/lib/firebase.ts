@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, runTransaction, writeBatch, where } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -34,6 +34,16 @@ export async function signInWithEmail(email: string, pass: string) {
     return result.user;
   } catch (error: any) {
     console.error("Sign In Error:", error);
+    throw new Error(error.message);
+  }
+}
+
+export async function resetUserPassword(email: string) {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return true;
+  } catch (error: any) {
+    console.error("Password Reset Error:", error);
     throw new Error(error.message);
   }
 }
