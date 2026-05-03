@@ -40,6 +40,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isOpen, isMobile, onCloseSide
   const navItems = [
     { id: 'home', icon: Play, label: 'الرئيسية' },
     { id: 'videos', icon: Play, label: 'الفيديوهات' },
+    { id: 'ptc', icon: Flame, label: 'تصفح المواقع', badge: 'جديد' },
     { id: 'links', icon: LinkIcon, label: 'تخطي الروابط', badge: 'جديد' },
     { id: 'publish', icon: Upload, label: 'نشر محتوى' },
     { id: 'offers', icon: Briefcase, label: 'جدار العروض', badge: 'جديد' },

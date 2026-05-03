@@ -7,6 +7,7 @@ import { RealOffersView } from './views/RealOffersView';
 import { EarnView } from './views/EarnView';
 import { LinksView } from './views/LinksView';
 import { GamesView } from './views/GamesView';
+import { PTCView } from './views/PTCView';
 import { AffiliateView } from './views/AffiliateView';
 import { ReferralsView } from './views/ReferralsView';
 import { LeaderboardView } from './views/LeaderboardView';
@@ -385,8 +386,9 @@ const App = () => {
         </div>
         {activeTab === 'home' && <HomeView setActiveTab={setActiveTab} />}
         {activeTab === 'videos' && <VideosView setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
+        {activeTab === 'ptc' && <PTCView setRefreshPoints={setRefreshPoints} user={user} settings={settings} />}
         {activeTab === 'links' && <LinksView user={user} setRefreshPoints={setRefreshPoints} />}
-        {activeTab === 'publish' && <PublishView user={user} />}
+        {activeTab === 'publish' && <PublishView user={user} setRefreshPoints={setRefreshPoints} />}
         {activeTab === 'offers' && <OffersView user={user} setRefreshPoints={setRefreshPoints} />}
         {activeTab === 'real_offers' && <RealOffersView user={user} setActiveTab={setActiveTab} />}
         {activeTab === 'market' && <MarketView user={user} points={points} setRefreshPoints={setRefreshPoints} />}

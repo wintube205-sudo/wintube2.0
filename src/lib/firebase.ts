@@ -684,7 +684,7 @@ export async function submitVipRequest(uid: string, userName: string, method: st
   }
 }
 
-export async function checkDailyLimit(uid: string, type: 'video' | 'game'): Promise<boolean> {
+export async function checkDailyLimit(uid: string, type: 'video' | 'game' | 'ptc'): Promise<boolean> {
   try {
     const today = new Date().toISOString().split('T')[0];
     const statRef = doc(db, 'users', uid, 'daily_stats', today);
@@ -693,6 +693,7 @@ export async function checkDailyLimit(uid: string, type: 'video' | 'game'): Prom
     const data = snap.data();
     if (type === 'video' && (data.videosWatched || 0) >= 20) return false;
     if (type === 'game' && (data.gamesPlayed || 0) >= 20) return false;
+    if (type === 'ptc' && (data.ptcVisited || 0) >= 20) return false;
     return true;
   } catch (e) {
     console.error("Error checking daily limit", e);
@@ -700,7 +701,7 @@ export async function checkDailyLimit(uid: string, type: 'video' | 'game'): Prom
   }
 }
 
-export async function incrementDailyProgress(uid: string, type: 'video' | 'game') {
+export async function incrementDailyProgress(uid: string, type: 'video' | 'game' | 'ptc') {
   try {
     const today = new Date().toISOString().split('T')[0];
     
@@ -734,6 +735,7 @@ export async function incrementDailyProgress(uid: string, type: 'video' | 'game'
         t.set(statRef, {
           videosWatched: type === 'video' ? 1 : 0,
           gamesPlayed: type === 'game' ? 1 : 0,
+          ptcVisited: type === 'ptc' ? 1 : 0,
           loginClaimed: false,
           videosClaimed: false,
           gamesClaimed: false,
@@ -744,6 +746,7 @@ export async function incrementDailyProgress(uid: string, type: 'video' | 'game'
         const updates: any = {};
         if (type === 'video') updates.videosWatched = (data.videosWatched || 0) + 1;
         if (type === 'game') updates.gamesPlayed = (data.gamesPlayed || 0) + 1;
+        if (type === 'ptc') updates.ptcVisited = (data.ptcVisited || 0) + 1;
         t.update(statRef, updates);
       }
 
@@ -755,17 +758,20 @@ export async function incrementDailyProgress(uid: string, type: 'video' | 'game'
          // Total Stats
          if (type === 'video') updates.totalVideosWatched = (userData.totalVideosWatched || 0) + 1;
          if (type === 'game') updates.totalGamesPlayed = (userData.totalGamesPlayed || 0) + 1;
+         if (type === 'ptc') updates.totalPtcVisited = (userData.totalPtcVisited || 0) + 1;
          
          // Weekly Stats
          if (userData.currentWeek !== weekKey) {
              updates.currentWeek = weekKey;
              updates.weeklyVideosWatched = type === 'video' ? 1 : 0;
              updates.weeklyGamesPlayed = type === 'game' ? 1 : 0;
+             updates.weeklyPtcVisited = type === 'ptc' ? 1 : 0;
              updates.weeklyClaimedVideos = false;
              updates.weeklyClaimedGames = false;
          } else {
              if (type === 'video') updates.weeklyVideosWatched = (userData.weeklyVideosWatched || 0) + 1;
              if (type === 'game') updates.weeklyGamesPlayed = (userData.weeklyGamesPlayed || 0) + 1;
+             if (type === 'ptc') updates.weeklyPtcVisited = (userData.weeklyPtcVisited || 0) + 1;
          }
          
          // Monthly Stats
@@ -773,11 +779,13 @@ export async function incrementDailyProgress(uid: string, type: 'video' | 'game'
              updates.currentMonth = monthKey;
              updates.monthlyVideosWatched = type === 'video' ? 1 : 0;
              updates.monthlyGamesPlayed = type === 'game' ? 1 : 0;
+             updates.monthlyPtcVisited = type === 'ptc' ? 1 : 0;
              updates.monthlyClaimedVideos = false;
              updates.monthlyClaimedGames = false;
          } else {
              if (type === 'video') updates.monthlyVideosWatched = (userData.monthlyVideosWatched || 0) + 1;
              if (type === 'game') updates.monthlyGamesPlayed = (userData.monthlyGamesPlayed || 0) + 1;
+             if (type === 'ptc') updates.monthlyPtcVisited = (userData.monthlyPtcVisited || 0) + 1;
          }
          
          t.update(userRef, updates);
@@ -788,7 +796,7 @@ export async function incrementDailyProgress(uid: string, type: 'video' | 'game'
   }
 }
 
-export async function claimDailyReward(uid: string, taskId: 'login' | 'videos' | 'games', baseReward: number, title: string) {
+export async function claimDailyReward(uid: string, taskId: 'login' | 'videos' | 'games' | 'ptc', baseReward: number, title: string) {
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
   const statRef = doc(db, 'users', uid, 'daily_stats', today);
@@ -798,11 +806,12 @@ export async function claimDailyReward(uid: string, taskId: 'login' | 'videos' |
     let newTotal = 0;
     await runTransaction(db, async (t) => {
       const statSnap = await t.get(statRef);
-      let statData: any = statSnap.exists() ? statSnap.data() : { videosWatched: 0, gamesPlayed: 0, loginClaimed: false, videosClaimed: false, gamesClaimed: false };
+      let statData: any = statSnap.exists() ? statSnap.data() : { videosWatched: 0, gamesPlayed: 0, ptcVisited: 0, loginClaimed: false, videosClaimed: false, gamesClaimed: false, ptcClaimed: false };
       
       if (taskId === 'login' && statData.loginClaimed) throw new Error("تم استلام المكافأة مسبقاً");
       if (taskId === 'videos' && (statData.videosWatched < 5 || statData.videosClaimed)) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
       if (taskId === 'games' && (statData.gamesPlayed < 3 || statData.gamesClaimed)) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
+      if (taskId === 'ptc' && (statData.ptcVisited < 5 || statData.ptcClaimed)) throw new Error("غير مستوفي الشروط أو مستلم مسبقاً");
 
       const userSnap = await t.get(userRef);
       if (!userSnap.exists()) throw new Error("User not found");
@@ -835,6 +844,7 @@ export async function claimDailyReward(uid: string, taskId: 'login' | 'videos' |
       if (taskId === 'login') updates.loginClaimed = true;
       if (taskId === 'videos') updates.videosClaimed = true;
       if (taskId === 'games') updates.gamesClaimed = true;
+      if (taskId === 'ptc') updates.ptcClaimed = true;
       t.set(statRef, updates, { merge: true }); // Use set with merge in case doc doesn't exist
       
       const userUpdates: any = { points: newTotal };

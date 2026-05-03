@@ -131,6 +131,11 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /ptc_ads/{adId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
     match /api_keys/{keyId} {
       allow read, write: if isAdmin();
     }
@@ -151,7 +156,7 @@ service cloud.firestore {
       allow create: if isSignedIn() &&
          incoming().keys().hasAll(['title', 'url', 'type', 'uploaderId', 'uploaderName', 'views', 'createdAt']) &&
          incoming().uploaderId == request.auth.uid &&
-         incoming().type in ['video', 'game'] &&
+         incoming().type in ['video', 'game', 'ptc'] &&
          incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 100 &&
          incoming().url is string && incoming().url.size() > 0 && incoming().url.size() <= 500 &&
          incoming().uploaderName is string &&

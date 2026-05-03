@@ -7,6 +7,7 @@ import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { AdminAICoach } from '../components/AdminAICoach';
 
 import { AdminShortLinks } from '../components/AdminShortLinks';
+import { AdminPTC } from '../components/AdminPTC';
 
 import { updatePoints } from '../lib/firebase';
 
@@ -274,6 +275,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
           <button onClick={() => setActiveAdminTab('users')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'users' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>المستخدمين</button>
           <button onClick={() => setActiveAdminTab('games')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'games' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الألعاب</button>
           <button onClick={() => setActiveAdminTab('short_links')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'short_links' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>الروابط</button>
+          <button onClick={() => setActiveAdminTab('ptc')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold ${activeAdminTab === 'ptc' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>PTC</button>
           <button onClick={() => setActiveAdminTab('settings')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'settings' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Settings size={16}/> الإعدادات</button>
           <button onClick={() => setActiveAdminTab('notifications')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'notifications' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}><Bell size={16}/> الإشعارات</button>
           <button onClick={() => setActiveAdminTab('analytics')} className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 ${activeAdminTab === 'analytics' ? 'bg-red-600 text-white' : 'text-neutral-400'}`}>التحليلات</button>
@@ -286,6 +288,7 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
       {activeAdminTab === 'ai_coach' && <AdminAICoach adminData={adminData} />}
       {activeAdminTab === 'analytics' && <AnalyticsDashboard />}
       {activeAdminTab === 'short_links' && <AdminShortLinks />}
+      {activeAdminTab === 'ptc' && <AdminPTC />}
 
       {activeAdminTab === 'dashboard' && (
         <div className="animate-in fade-in">

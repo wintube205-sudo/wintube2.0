@@ -24,6 +24,11 @@ export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, setting
          target: settings?.taskTargetGames || 3, 
          reward: settings?.taskRewardGames || 150, 
          title: `العب ${settings?.taskTargetGames || 3} مرات`, icon: Gamepad2, color: 'text-blue-500', bg: 'bg-blue-500/20', actionTab: 'games' 
+      },
+      ptc: {
+         target: 5,
+         reward: 100,
+         title: `تصفح 5 مواقع`, icon: Target, color: 'text-pink-500', bg: 'bg-pink-500/20', actionTab: 'ptc'
       }
   };
 
@@ -39,7 +44,7 @@ export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, setting
     }
   }, [user]);
 
-  const handleClaimReward = async (taskId: 'login' | 'videos' | 'games') => {
+  const handleClaimReward = async (taskId: 'login' | 'videos' | 'games' | 'ptc') => {
     if (!user) return setToast({ msg: 'سجل دخولك أولاً', isError: true });
     if (isClaiming) return;
     setIsClaiming(true);
@@ -109,6 +114,10 @@ export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, setting
   const gameProgress = serverStats?.gamesPlayed || 0;
   const gameCompleted = serverStats?.gamesClaimed || false;
   const gameReady = gameProgress >= tasksTemplate.games.target && !gameCompleted;
+
+  const ptcProgress = serverStats?.ptcVisited || 0;
+  const ptcCompleted = serverStats?.ptcClaimed || false;
+  const ptcReady = ptcProgress >= tasksTemplate.ptc.target && !ptcCompleted;
   
   // Weekly / Monthly Logic
   const currentDate = new Date();
@@ -211,6 +220,23 @@ export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, setting
                       {gameCompleted ? <span className="text-green-500 font-bold text-sm">مستلمة</span> : 
                           gameReady ? <button onClick={() => handleClaimReward('games')} disabled={isClaiming} className="bg-amber-500 text-white font-bold px-4 py-2 rounded-xl">استلم!</button>
                           : <button onClick={() => setActiveTab('games')} className="bg-neutral-800 text-white px-4 py-2 rounded-xl text-sm">أكمل</button>}
+                   </div>
+                </div>
+
+                {/* PTC */}
+                <div className={`bg-neutral-900 border ${ptcCompleted ? 'border-green-500/30' : 'border-neutral-800'} rounded-2xl p-5 flex items-center gap-4`}>
+                   <div className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center ${ptcCompleted ? 'bg-green-500/20' : tasksTemplate.ptc.bg}`}>
+                      {ptcCompleted ? <CheckCircle2 className="text-green-500" /> : <tasksTemplate.ptc.icon className={tasksTemplate.ptc.color} />}
+                   </div>
+                   <div className="flex-grow">
+                      <h3 className="font-bold text-white">{tasksTemplate.ptc.title} ({tasksTemplate.ptc.reward}+)</h3>
+                      <div className="w-full bg-neutral-950 rounded-full h-2 mt-2"><div className="bg-pink-500 h-2 rounded-full transition-all" style={{ width: `${Math.min((ptcProgress/tasksTemplate.ptc.target)*100, 100)}%` }}></div></div>
+                      <div className="text-xs text-neutral-500 mt-1">{ptcProgress} / {tasksTemplate.ptc.target}</div>
+                   </div>
+                   <div className="flex-shrink-0">
+                      {ptcCompleted ? <span className="text-green-500 font-bold text-sm">مستلمة</span> : 
+                          ptcReady ? <button onClick={() => handleClaimReward('ptc')} disabled={isClaiming} className="bg-amber-500 text-white font-bold px-4 py-2 rounded-xl">استلم!</button>
+                          : <button onClick={() => setActiveTab('ptc')} className="bg-neutral-800 text-white px-4 py-2 rounded-xl text-sm">أكمل</button>}
                    </div>
                 </div>
              </>

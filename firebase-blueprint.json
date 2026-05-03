@@ -84,7 +84,7 @@
       "properties": {
         "title": { "type": "string" },
         "url": { "type": "string" },
-        "type": { "type": "string", "enum": ["video", "game"] },
+        "type": { "type": "string", "enum": ["video", "game", "ptc"] },
         "uploaderId": { "type": "string" },
         "uploaderName": { "type": "string" },
         "views": { "type": "number" },
@@ -118,6 +118,22 @@
         "createdAt": { "type": "string" }
       },
       "required": ["title", "url", "reward"]
+    },
+    "PtcAd": {
+      "title": "PTC Ad",
+      "description": "PTC ads added by admin for users to visit",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "url": { "type": "string" },
+        "reward": { "type": "number" },
+        "duration": { "type": "number" },
+        "thumbnail": { "type": "string" },
+        "clicks": { "type": "number" },
+        "maxClicks": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "url", "reward", "duration", "thumbnail"]
     }
   },
   "firestore": {
@@ -156,6 +172,10 @@
     "/short_links/{linkId}": {
       "schema": { "$ref": "#/entities/ShortLink" },
       "description": "Short links users can skip."
+    },
+    "/ptc_ads/{adId}": {
+      "schema": { "$ref": "#/entities/PtcAd" },
+      "description": "PTC ads for users to visit."
     }
   }
 }

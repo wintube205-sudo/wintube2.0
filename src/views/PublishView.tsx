@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Video, Gamepad2, Link as LinkIcon, Loader2, CheckCircle2, TrendingUp, Eye } from 'lucide-react';
-import { db } from '../lib/firebase';
+import { db, updatePoints } from '../lib/firebase';
 import { collection, addDoc, query, where, getDocs, orderBy, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 
-export const PublishView = ({ user }: any) => {
+export const PublishView = ({ user, setRefreshPoints }: any) => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
-  const [type, setType] = useState<'video' | 'game'>('video');
+  const [type, setType] = useState<'video' | 'game' | 'ptc'>('video');
+  const [reward, setReward] = useState<number>(5);
+  const [targetViews, setTargetViews] = useState<number>(100);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [myContent, setMyContent] = useState<any[]>([]);
@@ -57,7 +59,7 @@ export const PublishView = ({ user }: any) => {
           }
       }
       
-      await addDoc(collection(db, 'user_content'), {
+      let publishData: any = {
         title,
         url: embedUrl,
         thumbnail: thumbnailUrl,
@@ -66,7 +68,27 @@ export const PublishView = ({ user }: any) => {
         uploaderName: user.name,
         views: 0,
         createdAt: serverTimestamp()
-      });
+      };
+
+      if (type === 'ptc') {
+         const cost = reward * targetViews;
+         if (user.points < cost) {
+            alert(`رصيدك لا يكفي لنشر هذا الإعلان. التكلفة: ${cost} نقطة`);
+            setLoading(false);
+            return;
+         }
+         const res = await updatePoints(user.id, -cost, `تمويل إعلان PTC: ${title}`, 'spend');
+         if (!res.success) {
+            alert('حدث خطأ أثناء خصم النقاط');
+            setLoading(false);
+            return;
+         }
+         if (setRefreshPoints) setRefreshPoints((p: number) => p + 1);
+         publishData.reward = reward;
+         publishData.maxViews = targetViews;
+      }
+
+      await addDoc(collection(db, 'user_content'), publishData);
       setSuccess(true);
       setTitle('');
       setUrl('');
@@ -98,7 +120,7 @@ export const PublishView = ({ user }: any) => {
         <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-3xl">
           <h3 className="text-xl font-bold text-white mb-2">أضف رابطك</h3>
           <p className="text-neutral-400 text-sm mb-6">
-            قم بنشر رابط فيديو أو لعبة خاصة بك، وسنضعها أمام المستخدمين. ستحصل على مكافأة لكل مشاهدة/لعب لمحتواك! بالإضافة لأرباحك من عرض الإعلانات.
+            قم بنشر رابط فيديو أو لعبة أو موقع لزيارته (PTC). ستحصل على مكافآت وأرباح!
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -108,16 +130,23 @@ export const PublishView = ({ user }: any) => {
                 <button 
                   type="button" 
                   onClick={() => setType('video')} 
-                  className={`flex-1 p-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all border ${type === 'video' ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-neutral-950 border-neutral-800 text-neutral-500 hover:text-white'}`}
+                  className={`flex-1 p-2 rounded-xl flex flex-col items-center justify-center gap-1 font-bold transition-all border ${type === 'video' ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-neutral-950 border-neutral-800 text-neutral-500 hover:text-white'}`}
                 >
-                  <Video size={18} /> فيديو
+                  <Video size={18} /> <span className="text-xs">فيديو</span>
                 </button>
                 <button 
                   type="button" 
                   onClick={() => setType('game')} 
-                  className={`flex-1 p-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all border ${type === 'game' ? 'bg-purple-500/20 border-purple-500 text-purple-500' : 'bg-neutral-950 border-neutral-800 text-neutral-500 hover:text-white'}`}
+                  className={`flex-1 p-2 rounded-xl flex flex-col items-center justify-center gap-1 font-bold transition-all border ${type === 'game' ? 'bg-purple-500/20 border-purple-500 text-purple-500' : 'bg-neutral-950 border-neutral-800 text-neutral-500 hover:text-white'}`}
                 >
-                  <Gamepad2 size={18} /> لعبة (HTML5)
+                  <Gamepad2 size={18} /> <span className="text-xs">لعبة</span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setType('ptc')} 
+                  className={`flex-1 p-2 rounded-xl flex flex-col items-center justify-center gap-1 font-bold transition-all border ${type === 'ptc' ? 'bg-pink-500/20 border-pink-500 text-pink-500' : 'bg-neutral-950 border-neutral-800 text-neutral-500 hover:text-white'}`}
+                >
+                  <LinkIcon size={18} /> <span className="text-xs">موقع (PTC)</span>
                 </button>
               </div>
             </div>
@@ -149,6 +178,40 @@ export const PublishView = ({ user }: any) => {
                 />
               </div>
             </div>
+
+            {type === 'ptc' && (
+              <>
+                <div>
+                  <label className="text-sm text-neutral-400 block mb-1">النقاط لكل زيارة</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={reward}
+                    onChange={e => setReward(Number(e.target.value))}
+                    className="w-full bg-neutral-950 border border-neutral-800 p-3 rounded-xl text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-neutral-400 block mb-1">عدد الزيارات المطلوبة</label>
+                  <input
+                    type="number"
+                    min="10"
+                    value={targetViews}
+                    onChange={e => setTargetViews(Number(e.target.value))}
+                    className="w-full bg-neutral-950 border border-neutral-800 p-3 rounded-xl text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl">
+                  <div className="flex justify-between items-center text-sm font-bold text-blue-400">
+                    <span>التكلفة الإجمالية:</span>
+                    <span>{reward * targetViews} نقطة</span>
+                  </div>
+                  {user?.points < (reward * targetViews) && (
+                    <div className="text-red-500 text-xs mt-1">رصيدك لا يكفي ({user?.points || 0} نقطة)</div>
+                  )}
+                </div>
+              </>
+            )}
 
             <button 
               type="submit" 
@@ -183,7 +246,7 @@ export const PublishView = ({ user }: any) => {
                       </div>
                     ) : (
                       <div className="bg-neutral-900 p-2 rounded-lg">
-                        {item.type === 'video' ? <Video className="text-red-500" size={20} /> : <Gamepad2 className="text-purple-500" size={20} />}
+                        {item.type === 'video' ? <Video className="text-red-500" size={20} /> : item.type === 'game' ? <Gamepad2 className="text-purple-500" size={20} /> : <LinkIcon className="text-pink-500" size={20} />}
                       </div>
                     )}
                     <div>
