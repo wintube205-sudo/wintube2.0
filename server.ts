@@ -191,7 +191,7 @@ async function startServer() {
     }
   });
 
-  // https://wintube.win/api/postback/offerwall?subid=[player_id]&reward=[virtual_amount]&payout=[payout]&status=[status]&tx=[transaction_id]
+    // https://wintube.win/api/postback/offerwall?subid=[player_id]&reward=[virtual_amount]&payout=[payout]&status=[status]&tx=[transaction_id]
   app.get("/api/postback/offerwall", async (req, res) => {
     // استقبال وفك تشفير المتغيرات من رابط الـ Postback
     const subid = req.query.subid as string; // رقم المستخدم في موقعك
@@ -206,14 +206,11 @@ async function startServer() {
     console.log(`الربح بالدولار (payout): ${payout}`);
     console.log(`الحالة (status): ${status}`);
 
-    // التأكد من أن الإشعار حقيقي وأن العرض تمت الموافقة عليه
-    // في MyLead، الحالة "approved" أو "accepted" تعني نجاح العرض
     if (!subid || !reward) {
       return res.status(400).send("Missing parameters");
     }
 
     try {
-      // تحديث رصيد المستخدم بشكل آمن جداً باستخدام سيرفرات فايربيس (Admin)
       const pointsToAdd = Number(reward);
       if (!isNaN(pointsToAdd) && pointsToAdd > 0) {
         
@@ -227,10 +224,9 @@ async function startServer() {
              const currentPoints = doc.data()?.points || 0;
              t.update(userRef, { points: currentPoints + pointsToAdd });
              
-             // حفظ السجل في تاريخ المستخدم
              const historyRef = userRef.collection('history').doc(tx || Date.now().toString());
              t.set(historyRef, {
-               title: 'إكمال عرض من MyLead',
+               title: 'إكمال عرض (Offerwall)',
                amount: pointsToAdd,
                type: 'earn',
                createdAt: admin.firestore.FieldValue.serverTimestamp()
@@ -242,11 +238,54 @@ async function startServer() {
         }
       }
       
-      // الرد على شركة الإعلانات بأننا استلمنا الإشعار بنجاح (بعض الشركات تتطلب 1 او OK)
       res.status(200).send("OK");
     } catch (error) {
        console.error("خطأ أثناء إضافة النقاط للمستخدم:", error);
        res.status(500).send("Internal Server Error");
+    }
+  });
+
+  // https://wintube.win/api/postback/bitcotasks?subid=[uid]&reward=[amount]&payout=[payout]&status=[status]&tx=[tx]
+  app.get("/api/postback/bitcotasks", async (req, res) => {
+    const subid = req.query.subid as string;
+    const reward = req.query.reward as string;
+    const payout = req.query.payout as string;
+    
+    // Some networks send "status=1" or "status=completed"
+    // Usually bitcotasks uses numerical IDs or specific strings, we just ensure subid and reward exist
+    if (!subid || !reward) {
+      return res.status(400).send("0");
+    }
+
+    try {
+      const pointsToAdd = Number(reward);
+      if (!isNaN(pointsToAdd) && pointsToAdd > 0) {
+        const db = admin.firestore();
+        const userRef = db.collection('users').doc(subid);
+        const userSnap = await userRef.get();
+        
+        if (userSnap.exists) {
+          await db.runTransaction(async (t) => {
+             const doc = await t.get(userRef);
+             const currentPoints = Number(doc.data()?.points) || 0;
+             t.update(userRef, { points: currentPoints + pointsToAdd });
+             
+             const txId = (req.query.tx as string) || Date.now().toString();
+             const historyRef = userRef.collection('history').doc(txId);
+             t.set(historyRef, {
+               title: 'إكمال عرض (BitcoTasks)',
+               amount: pointsToAdd,
+               type: 'earn',
+               createdAt: admin.firestore.FieldValue.serverTimestamp()
+             });
+          });
+          console.log(`BitcoTasks: تم إضافة ${pointsToAdd} نقطة للمستخدم ${subid}`);
+        }
+      }
+      res.status(200).send("1"); // Bitcotasks often expects '1' for success
+    } catch (error) {
+       console.error("BitcoTasks Postback Error:", error);
+       res.status(500).send("0");
     }
   });
 

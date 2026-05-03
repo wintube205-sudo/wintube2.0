@@ -26,7 +26,7 @@ export const GamesView = ({ points, user, setRefreshPoints, settings }: any) => 
     const fetchGames = async () => {
       try {
         const snap = await getDocs(query(collection(db, 'games'), limit(20)));
-        let defaultGames = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        let defaultGames: any[] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
         if (defaultGames.length === 0) {
            defaultGames = [
