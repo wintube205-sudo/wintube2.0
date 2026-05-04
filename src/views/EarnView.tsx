@@ -12,22 +12,22 @@ export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, setting
 
   const tasksTemplate = {
       login: { 
-         reward: settings?.taskRewardLogin || 50, 
+         reward: settings?.taskRewardLogin || 25, 
          title: 'تسجيل الدخول اليومي', desc: 'احصل على مكافأتك مجاناً', icon: Calendar, color: 'text-green-500', bg: 'bg-green-500/20' 
       },
       videos: { 
          target: settings?.taskTargetVideos || 5, 
-         reward: settings?.taskRewardVideos || 200, 
+         reward: settings?.taskRewardVideos || 50, 
          title: `شاهد ${settings?.taskTargetVideos || 5} فيديوهات`, icon: Play, color: 'text-red-500', bg: 'bg-red-500/20', actionTab: 'videos' 
       },
       games: { 
          target: settings?.taskTargetGames || 3, 
-         reward: settings?.taskRewardGames || 150, 
+         reward: settings?.taskRewardGames || 30, 
          title: `العب ${settings?.taskTargetGames || 3} مرات`, icon: Gamepad2, color: 'text-blue-500', bg: 'bg-blue-500/20', actionTab: 'games' 
       },
       ptc: {
          target: 5,
-         reward: 100,
+         reward: 10,
          title: `تصفح 5 مواقع`, icon: Target, color: 'text-pink-500', bg: 'bg-pink-500/20', actionTab: 'ptc'
       }
   };
@@ -93,12 +93,12 @@ export const EarnView = ({ points, setRefreshPoints, user, setActiveTab, setting
   };
 
   const chainSteps = [
-     { type: 'video', amount: 5, reward: 200, title: 'شاهد 5 فيديوهات', targetTab: 'videos', icon: Play, color: 'text-red-500' },
-     { type: 'game', amount: 3, reward: 300, title: 'العب 3 ألعاب', targetTab: 'games', icon: Gamepad2, color: 'text-blue-500' },
-     { type: 'video', amount: 15, reward: 800, title: 'شاهد 15 فيديو', targetTab: 'videos', icon: Play, color: 'text-red-500' },
-     { type: 'game', amount: 10, reward: 1000, title: 'العب 10 ألعاب', targetTab: 'games', icon: Gamepad2, color: 'text-blue-500' },
-     { type: 'video', amount: 30, reward: 2000, title: 'شاهد 30 فيديو', targetTab: 'videos', icon: Play, color: 'text-red-500' },
-     { type: 'game', amount: 25, reward: 2500, title: 'العب 25 لعبة', targetTab: 'games', icon: Gamepad2, color: 'text-blue-500' }
+     { type: 'video', amount: 5, reward: 100, title: 'شاهد 5 فيديوهات', targetTab: 'videos', icon: Play, color: 'text-red-500' },
+     { type: 'game', amount: 3, reward: 150, title: 'العب 3 ألعاب', targetTab: 'games', icon: Gamepad2, color: 'text-blue-500' },
+     { type: 'video', amount: 15, reward: 400, title: 'شاهد 15 فيديو', targetTab: 'videos', icon: Play, color: 'text-red-500' },
+     { type: 'game', amount: 10, reward: 500, title: 'العب 10 ألعاب', targetTab: 'games', icon: Gamepad2, color: 'text-blue-500' },
+     { type: 'video', amount: 30, reward: 1000, title: 'شاهد 30 فيديو', targetTab: 'videos', icon: Play, color: 'text-red-500' },
+     { type: 'game', amount: 25, reward: 1250, title: 'العب 25 لعبة', targetTab: 'games', icon: Gamepad2, color: 'text-blue-500' }
   ];
 
   if (isLoading) {

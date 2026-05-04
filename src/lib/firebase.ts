@@ -247,7 +247,7 @@ async function processAffiliateReward(affId: string) {
 
       // Give $0.50 per signup (example amount)
       t.update(affRef, {
-         affiliateBalance: currentBalance + 0.50,
+         affiliateBalance: currentBalance + 0.10,
          affiliateSignups: currentSignups + 1
       });
    });
@@ -264,19 +264,19 @@ async function processReferralReward(referrerId: string) {
     const refEarnings = referrerDoc.data()?.referralsEarnings || 0;
     const levelings = referrerDoc.data()?.levelings || { level1: 0, level2: 0, level3: 0 };
     
-    levelings.level1 = (levelings.level1 || 0) + 100;
+    levelings.level1 = (levelings.level1 || 0) + 50;
 
     t.update(referrerRef, {
-        points: currentPoints + 100,
+        points: currentPoints + 50,
         referralCount: refCount + 1,
-        referralsEarnings: refEarnings + 100,
+        referralsEarnings: refEarnings + 50,
         levelings: levelings
     });
 
     const historyRef = doc(collection(db, 'users', referrerId, 'history'));
     t.set(historyRef, {
         title: 'مكافأة دعوة صديق',
-        amount: 100,
+        amount: 50,
         type: 'earn',
         createdAt: serverTimestamp()
     });
@@ -373,7 +373,7 @@ export async function updatePoints(uid: string, pointsDelta: number, reason: str
          finalPointsDelta += bonusPoints;
          
          if (isVIP) {
-            finalPointsDelta = Math.floor(finalPointsDelta * 2); // Double VIP points
+            finalPointsDelta = Math.floor(finalPointsDelta * 1.5); // 50% VIP bonus
          }
          
          pointsDelta = finalPointsDelta; // Update pointsDelta so logging matches
@@ -503,7 +503,7 @@ export async function claimChainReward(uid: string, stepIndex: number, requiredT
        }
        
        reward += bonusPoints;
-       if (isVIP) reward = Math.floor(reward * 2);
+       if (isVIP) reward = Math.floor(reward * 1.5);
        
        earnedPoints = reward;
        newTotal = (userData.points || 0) + reward;
@@ -572,7 +572,7 @@ export async function claimLongtermReward(uid: string, kind: 'weeklyVideos' | 'w
        }
        
        reward += bonusPoints;
-       if (isVIP) reward = Math.floor(reward * 2);
+       if (isVIP) reward = Math.floor(reward * 1.5);
        
        earnedPoints = reward;
        newTotal = (userData.points || 0) + reward;
@@ -829,7 +829,7 @@ export async function claimDailyReward(uid: string, taskId: 'login' | 'videos' |
             newStreak = 1;
          }
          // Progressive reward: base * streak
-         reward = newStreak * 20; // 20, 40, 60... up to 140
+         reward = newStreak * 10; // 10, 20, 30... up to 70
       }
 
       // VIP/Level multiplier (10% extra per level above 1, max 30% for lvl 4)
