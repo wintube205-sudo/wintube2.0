@@ -1,7 +1,7 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 
 // Initialize Firebase Admin (Required for securely updating points from the server)
 // In a real production deployment on your server, you should securely provide the service account key.

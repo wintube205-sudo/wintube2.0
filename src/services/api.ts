@@ -1,5 +1,5 @@
 import { db } from '../lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, runTransaction, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, runTransaction, where, writeBatch } from 'firebase/firestore';
 
 export async function submitWithdrawal(uid: string, userName: string, method: string, amount: number, points: number, account: string) {
   try {
@@ -176,13 +176,50 @@ export async function updateGlobalSettings(newSettings: any) {
 }
 
 export async function migratePoints() {
-    const response = await fetch('/api/admin/migrate-points', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
+    try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        const batchSize = 500;
+        let totalUpdated = 0;
+        const userDocs = usersSnap.docs;
+
+        for (let i = 0; i < userDocs.length; i += batchSize) {
+           const batch = writeBatch(db);
+           const chunk = userDocs.slice(i, i + batchSize);
+
+           chunk.forEach(docSnap => {
+              const data = docSnap.data();
+              const oldPoints = data.points || 0;
+              const oldRefEarnings = data.referralsEarnings || 0;
+              const oldLevelings = data.levelings || {};
+
+              const update: any = {};
+              if (oldPoints > 0) update.points = Math.floor(oldPoints / 100);
+              if (oldRefEarnings > 0) update.referralsEarnings = Math.floor(oldRefEarnings / 100);
+              
+              if (oldLevelings) {
+                 const newLevelings = { ...oldLevelings };
+                 if (newLevelings.level1) newLevelings.level1 = Math.floor(newLevelings.level1 / 100);
+                 if (newLevelings.level2) newLevelings.level2 = Math.floor(newLevelings.level2 / 100);
+                 if (newLevelings.level3) newLevelings.level3 = Math.floor(newLevelings.level3 / 100);
+                 update.levelings = newLevelings;
+              }
+
+              if (Object.keys(update).length > 0) {
+                 batch.update(docSnap.ref, update);
+                 totalUpdated++;
+              }
+           });
+           await batch.commit();
         }
-    });
-    return response.json();
+
+        const settingsRef = doc(db, 'settings', 'global');
+        await setDoc(settingsRef, { pointsPerDollar: 1000 }, { merge: true });
+
+        return { success: true, message: `Successfully migrated ${totalUpdated} users` };
+    } catch (error: any) {
+        console.error("Migration error:", error);
+        return { success: false, error: error.message };
+    }
 }
 
 export async function handleAdminWithdrawal(id: string, action: 'approved'|'rejected', wData: any) {
