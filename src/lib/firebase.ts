@@ -324,19 +324,19 @@ export async function updatePoints(uid: string, pointsDelta: number, reason: str
            const id1 = userData.ref1 || userData.referredBy;
            ref1Doc = await transaction.get(doc(db, 'users', id1));
            if (ref1Doc.exists()) {
-             commissions.push({ id: id1, amount: Math.max(1, Math.floor(pointsDelta * 0.15)), level: 1, refDoc: ref1Doc.data() });
+             commissions.push({ id: id1, amount: Math.max(1, Math.floor(pointsDelta * 0.10)), level: 1, refDoc: ref1Doc.data() });
            }
         }
         if (userData?.ref2) {
            ref2Doc = await transaction.get(doc(db, 'users', userData.ref2));
            if (ref2Doc.exists()) {
-             commissions.push({ id: userData.ref2, amount: Math.max(1, Math.floor(pointsDelta * 0.05)), level: 2, refDoc: ref2Doc.data() });
+             commissions.push({ id: userData.ref2, amount: Math.max(1, Math.floor(pointsDelta * 0.03)), level: 2, refDoc: ref2Doc.data() });
            }
         }
         if (userData?.ref3) {
            ref3Doc = await transaction.get(doc(db, 'users', userData.ref3));
            if (ref3Doc.exists()) {
-             commissions.push({ id: userData.ref3, amount: Math.max(1, Math.floor(pointsDelta * 0.02)), level: 3, refDoc: ref3Doc.data() });
+             commissions.push({ id: userData.ref3, amount: Math.max(1, Math.floor(pointsDelta * 0.01)), level: 3, refDoc: ref3Doc.data() });
            }
         }
       }
@@ -425,7 +425,7 @@ export async function updatePoints(uid: string, pointsDelta: number, reason: str
     // Log commission history & notification
     for (const comm of commissions) {
        if (comm.amount > 0) {
-           await logHistory(comm.id, `أرباح إحالة (مستوى ${comm.level}) ${comm.level === 1 ? '15' : comm.level === 2 ? '5' : '2'}% من نشاط صديق`, comm.amount, 'earn');
+           await logHistory(comm.id, `أرباح إحالة (مستوى ${comm.level}) ${comm.level === 1 ? '10' : comm.level === 2 ? '3' : '1'}% من نشاط صديق`, comm.amount, 'earn');
            if (comm.amount >= 100) {
                await addNotification(comm.id, "أرباح إحالة مجزية! 🤑", `لقد ربحت للتو ${comm.amount} نقطة من أصدقائك (مستوى ${comm.level})! قم بدعوة المزيد لزيادة أرباحك السلبية.`, 'reward');
            }
