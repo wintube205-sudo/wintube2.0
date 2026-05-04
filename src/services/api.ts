@@ -175,6 +175,16 @@ export async function updateGlobalSettings(newSettings: any) {
     await setDoc(settingsRef, newSettings, { merge: true });
 }
 
+export async function migratePoints() {
+    const response = await fetch('/api/admin/migrate-points', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    return response.json();
+}
+
 export async function handleAdminWithdrawal(id: string, action: 'approved'|'rejected', wData: any) {
    if (action === 'rejected') {
       // Refund points

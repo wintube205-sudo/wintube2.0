@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { LayoutDashboard, Loader2, Settings, Bell, Sparkles } from 'lucide-react';
-import { getAdminData, handleAdminWithdrawal, updateGlobalSettings } from '../services/api';
+import { getAdminData, handleAdminWithdrawal, updateGlobalSettings, migratePoints } from '../services/api';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
@@ -29,6 +29,20 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
     eventMode: false,
     myleadToken: ''
   });
+
+  const onMigratePoints = async () => {
+    if (confirm("هل تريد ترحيل نقاط جميع المستخدمين (÷100)؟")) {
+      setLoading(true);
+      try {
+        const res = await migratePoints();
+        alert(res.message || res.error);
+      } catch (e: any) {
+        alert("خطأ في الاتصال بالسيرفر");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   const [apiKeys, setApiKeys] = useState<any[]>([]);
   const [newApiName, setNewApiName] = useState('');
@@ -406,6 +420,18 @@ export const AdminView = ({ user, onSettingsUpdated }: any) => {
         <div className="animate-in fade-in space-y-8">
            <div>
              <h3 className="text-xl font-bold text-white mb-4 italic flex items-center gap-2"><Settings className="text-red-500"/> إعدادات النظام العامة</h3>
+             <div className="mb-6 p-4 bg-red-900/10 border border-red-500/20 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="text-sm">
+                   <p className="text-red-400 font-bold mb-1 italic">📦 ترحيل نقاط المستخدمين</p>
+                   <p className="text-neutral-500">استخدم هذا الزر لتقسيم نقاط جميع المستخدمين على 100 لتناسب سعر الصرف الجديد (1$ = 1000 نقطة).</p>
+                </div>
+                <button 
+                   onClick={onMigratePoints}
+                   className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 whitespace-nowrap"
+                >
+                   🚀 تشغيل الترحيل
+                </button>
+             </div>
              <form onSubmit={onUpdateSettings} className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div className="space-y-2">

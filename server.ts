@@ -91,6 +91,65 @@ async function startServer() {
     }
   });
 
+  // Admin Migration Endpoint
+  app.post("/api/admin/migrate-points", async (req, res) => {
+    try {
+      const db = admin.firestore();
+      const usersSnap = await db.collection('users').get();
+      const batchSize = 500;
+      let totalUpdated = 0;
+
+      // Handle users in chunks
+      const userDocs = usersSnap.docs;
+      for (let i = 0; i < userDocs.length; i += batchSize) {
+        const batch = db.batch();
+        const chunk = userDocs.slice(i, i + batchSize);
+        
+        chunk.forEach(docSnap => {
+          const data = docSnap.data();
+          const oldPoints = data.points || 0;
+          const oldRefEarnings = data.referralsEarnings || 0;
+          const oldLevelings = data.levelings || {};
+
+          const update: any = {};
+          if (oldPoints > 0) update.points = Math.floor(oldPoints / 100);
+          if (oldRefEarnings > 0) update.referralsEarnings = Math.floor(oldRefEarnings / 100);
+          
+          if (oldLevelings) {
+            const newLevelings = { ...oldLevelings };
+            if (newLevelings.level1) newLevelings.level1 = Math.floor(newLevelings.level1 / 100);
+            if (newLevelings.level2) newLevelings.level2 = Math.floor(newLevelings.level2 / 100);
+            if (newLevelings.level3) newLevelings.level3 = Math.floor(newLevelings.level3 / 100);
+            update.levelings = newLevelings;
+          }
+
+          if (Object.keys(update).length > 0) {
+            batch.update(docSnap.ref, update);
+            totalUpdated++;
+          }
+        });
+        await batch.commit();
+      }
+
+      // Update global settings
+      const settingsRef = db.collection('settings').doc('global');
+      const settingsSnap = await settingsRef.get();
+      if (settingsSnap.exists) {
+        const settings = settingsSnap.data() || {};
+        await settingsRef.update({
+          pointsPerDollar: 1000,
+          // If minWithdrawal was based on points (unlikely given it's "In Dollars" in default), 
+          // we'd update it here. But our code says it uses "In Dollars" for minWithdrawal.
+        });
+      }
+
+      res.json({ success: true, message: `Successfully migrated ${totalUpdated} users points.` });
+    } catch (e: any) {
+      console.error("Migration failed:", e);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // Mutate User Points
   app.post("/api/v1/users/:id/points", authenticateApi, async (req, res) => {
     try {
